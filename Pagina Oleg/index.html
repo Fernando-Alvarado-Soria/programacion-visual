@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demonology (Roblox) - Archivos de Investigación</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --panel-bg: #1f2833;
+            --text-main: #c5c6c7;
+            --accent: #66fcf1;
+            --accent-hover: #45a29e;
+            --danger: #b81d1d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            border-bottom: 2px solid var(--panel-bg);
+            margin-bottom: 30px;
+            animation: flicker 4s infinite;
+        }
+
+        h1 {
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            font-size: 2.5rem;
+            color: var(--text-main);
+            text-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
+        }
+
+        header p {
+            color: var(--accent-hover);
+            font-weight: 300;
+            margin-top: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"] {
+            padding: 12px 20px;
+            border: 1px solid var(--panel-bg);
+            background-color: var(--bg-color);
+            color: var(--accent);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 400px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 8px rgba(102, 252, 241, 0.2);
+        }
+
+        .ghost-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .ghost-card {
+            background-color: var(--panel-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            border-left: 4px solid var(--panel-bg);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 20px; /* Agregado para espaciar el fondo */
+        }
+
+        .ghost-card:hover {
+            transform: translateY(-5px);
+            border-left-color: var(--accent);
+        }
+
+        .ghost-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 252, 241, 0.05), transparent);
+            transition: left 0.5s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .ghost-card:hover::before {
+            left: 100%;
+        }
+
+        .ghost-image-container {
+            width: 100%;
+            height: 180px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .ghost-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            filter: brightness(0.8) contrast(1.1);
+        }
+
+        .ghost-image-container::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(0deg, var(--panel-bg), transparent);
+            pointer-events: none;
+        }
+
+        .ghost-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 15px 20px 10px 20px; /* Margen superior y lateral */
+        }
+
+        .ghost-evidence {
+            font-size: 0.85rem;
+            color: var(--accent-hover);
+            margin: 0 20px 15px 20px; /* Margen lateral y espaciado inferior */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: auto;
+        }
+
+        .evidence-tag {
+            background: rgba(102, 252, 241, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(102, 252, 241, 0.2);
+        }
+
+        .ghost-details {
+            font-size: 0.9rem;
+            display: none;
+            margin: 0 20px 0 20px; /* Márgenes laterales */
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ghost-card.expanded .ghost-details {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .danger-text {
+            color: var(--danger);
+            font-weight: 600;
+            margin-top: 10px;
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes flicker {
+            0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+                opacity: 1;
+            }
+            20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+                opacity: 0.4;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Demonology</h1>
+        <p>Base de Datos de Blaqk Magic Blue • Terminal de Caza</p>
+    </header>
+
+    <div class="container">
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Buscar fantasma o evidencia (ej: EMF Nivel 5)...">
+        </div>
+
+        <div class="ghost-grid" id="ghostGrid">
+            <!-- Los fantasmas se renderizarán aquí vía JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        const ghostDatabase = [
+            {
+                name: "Doppelganger",
+                image: "img/dopplenganger.png",
+                evidence: ["Temperaturas Heladas", "Inscripción", "Caja Espiritual"],
+                description: "Un fantasma engañoso. Imita las habilidades de otros fantasmas y puede generar Orbes Fantasmales falsos para confundir a los investigadores.",
+                warning: "Si encuentras un Orbe Fantasmal, ten cuidado: puede ser falso. Si además no se quema al atravesar fuego sagrado, es un Doppelganger."
+            },
+            {
+                name: "Demon",
+                image: "img/demon.png",
+                evidence: ["EMF Nivel 5", "Huellas", "Temperaturas Heladas"],
+                description: "Caza con mucha más frecuencia que otros fantasmas. Los crucifijos tienen un rango mayor de efectividad contra ellos y flotan al usarse.",
+                warning: "Si tu cruz/crucifijo flota en el aire al quemarse, es una confirmación absoluta de que te enfrentas a un Demonio."
+            },
+            {
+                name: "Banshee",
+                image: "img/banshee.png",
+                evidence: ["Orbe Fantasmal", "Huellas", "Temperaturas Heladas"],
+                description: "Puede romper múltiples ventanas o espejos a la vez. A veces emite un lamento único al comenzar su caza.",
+                warning: "Disminuye su velocidad cada vez que mata a alguien. Mantente atento a la rotura masiva de cristales."
+            },
+            {
+                name: "Shadow",
+                image: "img/shadow.png",
+                evidence: ["EMF Nivel 5", "Inscripción", "Proyector Láser"],
+                description: "Produce cambios de temperatura mucho más bajos. Su velocidad de movimiento es menor en habitaciones iluminadas.",
+                warning: "Si la temperatura en una habitación cambia repentinamente en más de 0.1°C en un solo salto, NO es un Shadow."
+            },
+            {
+                name: "Vex",
+                image: "img/vex.png",
+                evidence: ["Marchitamiento", "Orbe Fantasmal", "Temperaturas Heladas"],
+                description: "Un fantasma evasivo que no aparece en los escáneres LIDAR y tiene la habilidad innata de atravesar paredes.",
+                warning: "Si el fantasma atraviesa una pared y NO aparece en los escáneres LIDAR de tu equipo, definitivamente estás ante un Vex."
+            },
+            {
+                name: "Ravager",
+                image: "img/ravager.png",
+                evidence: ["Inscripción", "EMF Nivel 5", "Caja Espiritual"],
+                description: "Entidad violenta que lanza múltiples objetos a la vez. Durante una caza, puede crear un vórtice de objetos a su alrededor.",
+                warning: "Todos sus eventos paranormales (como luces parpadeantes) dejarán siempre una evidencia de EMF Nivel 5."
+            },
+            {
+                name: "Wraith",
+                image: "img/wraith.png",
+                evidence: ["EMF Nivel 5", "Caja Espiritual", "Proyector Láser"],
+                description: "Agota la energía del jugador muy rápidamente (0.2-0.4% por segundo) con su presencia. No altera las líneas de sal.",
+                warning: "Si el fantasma camina directamente a través de una línea de sal sin perturbarla, tienes la confirmación de que es un Wraith."
+            },
+            {
+                name: "Revenant",
+                image: "img/revenant.png",
+                evidence: ["Inscripción", "EMF Nivel 5", "Temperaturas Heladas"],
+                description: "Tiene un tiempo de recarga entre cazas muy bajo. Se detendrá inmediatamente si logra atrapar a una víctima.",
+                warning: "Si la cacería termina instantáneamente al momento de que tú o un compañero de equipo mueren, es un Revenant garantizado."
+            }
+        ];
+
+        const grid = document.getElementById('ghostGrid');
+        const searchInput = document.getElementById('searchInput');
+
+        function renderGhosts(ghosts) {
+            grid.innerHTML = '';
+            
+            ghosts.forEach((ghost, index) => {
+                const evidenceTags = ghost.evidence.map(e => `<span class="evidence-tag">${e}</span>`).join('');
+                
+                const card = document.createElement('div');
+                card.className = 'ghost-card';
+                card.innerHTML = `
+                    <div class="ghost-image-container">
+                        <img src="${ghost.image}" alt="${ghost.name}">
+                    </div>
+                    <div class="ghost-name">${ghost.name}</div>
+                    <div class="ghost-evidence">
+                        ${evidenceTags}
+                    </div>
+                    <div class="ghost-details">
+                        <p>${ghost.description}</p>
+                        <span class="danger-text">⚠️ ${ghost.warning}</span>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    const isExpanded = card.classList.contains('expanded');
+                    document.querySelectorAll('.ghost-card').forEach(c => c.classList.remove('expanded'));
+                    if (!isExpanded) {
+                        card.classList.add('expanded');
+                    }
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredGhosts = ghostDatabase.filter(ghost => {
+                const matchesName = ghost.name.toLowerCase().includes(searchTerm);
+                const matchesEvidence = ghost.evidence.some(ev => ev.toLowerCase().includes(searchTerm));
+                return matchesName || matchesEvidence;
+            });
+            renderGhosts(filteredGhosts);
+        });
+
+        renderGhosts(ghostDatabase);
+    </script>
+</body>
+</html>

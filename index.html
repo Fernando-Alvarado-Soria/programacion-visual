@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f5f0" />
+    <meta name="description" content="Una muestra de los proyectos web creados por Adrian, Ian, Max y Oleg." />
+    <title>La muestra — Proyectos de graduación</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <script src="assets/js/main.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#inicio" aria-label="La muestra, inicio">
+        <span class="brand-mark" aria-hidden="true">M.</span>
+        <span>LA MUESTRA<span class="brand-year"> / 2025—26</span></span>
+      </a>
+      <nav class="top-nav" aria-label="Navegación principal">
+        <a class="nav-link active" href="#proyectos">Proyectos <span>05</span></a>
+        <a class="nav-link" href="#alumnos">Alumnos</a>
+      </nav>
+      <a class="header-cta" href="#proyectos">Explorar muestra <span aria-hidden="true">↘</span></a>
+    </header>
+
+    <main id="inicio">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="live-dot"></span> MUESTRA DE GRADUACIÓN · DESARROLLO WEB</p>
+          <h1 id="hero-title">Ideas que ya<br />están <span>en juego.</span></h1>
+          <div class="hero-bottom">
+            <p>Cuatro alumnos. Cinco proyectos.<br />Un primer vistazo a todo lo que pueden crear.</p>
+            <a href="#proyectos" class="round-link" aria-label="Ver proyectos">↓</a>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="art-orbit orbit-one"></div>
+          <div class="art-orbit orbit-two"></div>
+          <div class="art-sun"></div>
+          <div class="art-spark spark-one">✳</div>
+          <div class="art-spark spark-two">✳</div>
+          <div class="art-caption">PROYECTOS<br />EN MOVIMIENTO <span>↗</span></div>
+          <div class="art-stamp">HECHO<br />CON<br /><b>IDEAS</b></div>
+          <div class="art-number">01—04</div>
+        </div>
+      </section>
+
+      <section class="intro-strip" aria-label="Resumen de la muestra">
+        <p>Una colección de mundos, juegos y experiencias interactivas creadas desde cero.</p>
+        <div class="summary"><span>04</span> ALUMNOS <i></i> <span>05</span> PROYECTOS</div>
+      </section>
+
+      <section class="work-section" id="proyectos" aria-labelledby="projects-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">EL TRABAJO</p>
+            <h2 id="projects-title">Pasa, mira, juega.</h2>
+          </div>
+          <p class="section-aside">Cada proyecto abre en su propia página.<br />Elige uno y explóralo a tu ritmo.</p>
+        </div>
+
+        <div class="toolbar">
+          <div class="filters" role="group" aria-label="Filtrar proyectos por alumno">
+            <button class="filter-button is-active" type="button" data-filter="todos" aria-pressed="true">Todos <span>05</span></button>
+            <button class="filter-button" type="button" data-filter="Adrian" aria-pressed="false">Adrian</button>
+            <button class="filter-button" type="button" data-filter="Ian" aria-pressed="false">Ian</button>
+            <button class="filter-button" type="button" data-filter="Max" aria-pressed="false">Max</button>
+            <button class="filter-button" type="button" data-filter="Oleg" aria-pressed="false">Oleg</button>
+          </div>
+          <label class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <span class="sr-only">Buscar proyectos</span>
+            <input id="project-search" type="search" placeholder="Buscar proyecto..." autocomplete="off" />
+            <kbd>/</kbd>
+          </label>
+        </div>
+
+        <div class="project-grid" id="project-grid" aria-live="polite">
+          <article class="project-card card-bear" data-student="Adrian" data-search="bear dash osos juego aventura arcade">
+            <a class="card-link" href="Pagina%20Adrian/osos.html" target="_blank" rel="noopener noreferrer" aria-label="Abrir Bear Dash de Adrian en una nueva pestaña">
+              <div class="card-art bear-art">
+                <div class="bear-sky"></div><div class="bear-hill hill-back"></div><div class="bear-hill hill-front"></div>
+                <span class="bear-sun"></span><span class="bear-emoji">🐻</span><span class="bear-fruit fruit-one">🍎</span><span class="bear-fruit fruit-two">🍓</span>
+                <span class="art-label">PLAYER 01 <i>●●●</i></span><span class="art-word">BEAR<br />DASH<span>!</span></span>
+                <span class="play-chip">JUGAR ↗</span>
+              </div>
+              <div class="card-info"><div><p class="card-student">ADRIAN <span>01 / 05</span></p><h3>Bear Dash</h3></div><span class="card-arrow" aria-hidden="true">↗</span></div>
+              <p class="card-description">Una carrera salvaje por recoger frutas antes que los osos rivales.</p>
+              <div class="card-tags"><span>JUEGO</span><span>CANVAS</span><span>AVENTURA</span></div>
+            </a>
+          </article>
+
+          <article class="project-card card-minecraft" data-student="Ian" data-search="minecraft 3d bloques construcción mundo inventario">
+            <a class="card-link" href="Pagina%20Ian/index.html" target="_blank" rel="noopener noreferrer" aria-label="Abrir Minecraft 3D de Ian en una nueva pestaña">
+              <div class="card-art minecraft-art">
+                <div class="pixel-sun"></div><div class="pixel-cloud cloud-one"></div><div class="pixel-cloud cloud-two"></div>
+                <div class="voxel voxel-grass"></div><div class="voxel voxel-dirt"></div><div class="voxel voxel-stone"></div><div class="voxel voxel-tree"></div>
+                <span class="pixel-title">MI JUEGO<br />WEB</span><span class="pixel-hint">[ WASD ] PARA MOVERTE</span><span class="pixel-cursor">＋</span>
+              </div>
+              <div class="card-info"><div><p class="card-student">IAN <span>02 / 05</span></p><h3>Minecraft 3D</h3></div><span class="card-arrow" aria-hidden="true">↗</span></div>
+              <p class="card-description">Un mundo de bloques en 3D para explorar, construir y sobrevivir.</p>
+              <div class="card-tags"><span>3D</span><span>THREE.JS</span><span>SANDBOX</span></div>
+            </a>
+          </article>
+
+          <article class="project-card card-football" data-student="Max" data-search="football league fútbol soccer estadio deporte">
+            <a class="card-link" href="Pagina%20Max/football_league_2026.html" target="_blank" rel="noopener noreferrer" aria-label="Abrir Football League 2026 de Max en una nueva pestaña">
+              <div class="card-art football-art">
+                <div class="stadium-lights lights-left"></div><div class="stadium-lights lights-right"></div>
+                <div class="field-lines"><span class="center-circle"></span><span class="field-box box-top"></span><span class="field-box box-bottom"></span></div>
+                <span class="scoreboard"><b>MDR</b> 2 <i>—</i> 1 <b>BAR</b><small>FINAL · 90:00</small></span>
+                <span class="football-ball">⚽</span><span class="football-title">FOOTBALL<br /><b>LEAGUE</b></span>
+                <span class="season-tag">SEASON 2026</span>
+              </div>
+              <div class="card-info"><div><p class="card-student">MAX <span>03 / 05</span></p><h3>Football League 2026</h3></div><span class="card-arrow" aria-hidden="true">↗</span></div>
+              <p class="card-description">Un partido 3D con equipos, controles y una liga para competir.</p>
+              <div class="card-tags"><span>DEPORTES</span><span>3D</span><span>THREE.JS</span></div>
+            </a>
+          </article>
+
+          <article class="project-card card-chess" data-student="Max" data-search="ajedrez chess estrategia tablero bot juego">
+            <a class="card-link" href="Pagina%20Max/ajedres.html" target="_blank" rel="noopener noreferrer" aria-label="Abrir Ajedrez de Max en una nueva pestaña">
+              <div class="card-art chess-art">
+                <div class="chess-glow"></div><div class="chess-board" aria-hidden="true"><span>♜</span><span>♞</span><span>♝</span><span>♛</span><span>♚</span><span>♝</span><span>♞</span><span>♜</span><span>♟</span><span>♟</span><span>♟</span><span>♟</span><span>♟</span><span>♟</span><span>♟</span><span>♟</span></div>
+                <span class="chess-note">PIENSA<br />UNA JUGADA<br /><b>POR DELANTE.</b></span><span class="chess-knight">♘</span>
+              </div>
+              <div class="card-info"><div><p class="card-student">MAX <span>04 / 05</span></p><h3>Casa de Ajedrez</h3></div><span class="card-arrow" aria-hidden="true">↗</span></div>
+              <p class="card-description">Ocho formas de jugar: contra el bot, con amigos o a practicar.</p>
+              <div class="card-tags"><span>ESTRATEGIA</span><span>JUEGO</span><span>INTERACTIVO</span></div>
+            </a>
+          </article>
+
+          <article class="project-card card-demonology" data-student="Oleg" data-search="demonology fantasmas investigación archivo evidencias misterio">
+            <a class="card-link" href="Pagina%20Oleg/index.html" target="_blank" rel="noopener noreferrer" aria-label="Abrir Demonology de Oleg en una nueva pestaña">
+              <div class="card-art demon-art">
+                <div class="demon-moon"></div><div class="demon-fog fog-one"></div><div class="demon-fog fog-two"></div>
+                <span class="demon-sigil">✳</span><span class="demon-title">DEMON<span>OLOGY</span></span><span class="demon-subtitle">ARCHIVOS DE INVESTIGACIÓN</span>
+                <div class="evidence-card"><span>EMF</span><span>✦</span><span>−°C</span></div><span class="file-stamp">CASE<br />NO. 008</span>
+              </div>
+              <div class="card-info"><div><p class="card-student">OLEG <span>05 / 05</span></p><h3>Demonology</h3></div><span class="card-arrow" aria-hidden="true">↗</span></div>
+              <p class="card-description">Un archivo de criaturas, pistas y evidencias para investigar.</p>
+              <div class="card-tags"><span>CATÁLOGO</span><span>INVESTIGACIÓN</span><span>MISTERIO</span></div>
+            </a>
+          </article>
+        </div>
+        <p class="empty-state" id="empty-state" hidden>No encontramos proyectos con esa búsqueda. Prueba otro nombre.</p>
+      </section>
+
+      <section class="students-section" id="alumnos" aria-labelledby="students-title">
+        <div class="students-heading"><div><p class="eyebrow">QUIÉNES ESTÁN DETRÁS</p><h2 id="students-title">Cuatro formas de imaginar.</h2></div><span class="student-count">PROMOCIÓN · 2025—26</span></div>
+        <div class="student-list">
+          <a href="#proyectos" class="student-row" data-student-link="Adrian"><span class="student-index">01</span><span class="student-avatar avatar-adrian">A</span><span class="student-name">Adrian</span><span class="student-focus">JUEGOS · AVENTURA</span><span class="student-project-count">01 proyecto</span><span class="student-arrow">↗</span></a>
+          <a href="#proyectos" class="student-row" data-student-link="Ian"><span class="student-index">02</span><span class="student-avatar avatar-ian">I</span><span class="student-name">Ian</span><span class="student-focus">MUNDOS · 3D</span><span class="student-project-count">01 proyecto</span><span class="student-arrow">↗</span></a>
+          <a href="#proyectos" class="student-row" data-student-link="Max"><span class="student-index">03</span><span class="student-avatar avatar-max">M</span><span class="student-name">Max</span><span class="student-focus">DEPORTE · ESTRATEGIA</span><span class="student-project-count">02 proyectos</span><span class="student-arrow">↗</span></a>
+          <a href="#proyectos" class="student-row" data-student-link="Oleg"><span class="student-index">04</span><span class="student-avatar avatar-oleg">O</span><span class="student-name">Oleg</span><span class="student-focus">MISTERIO · INVESTIGACIÓN</span><span class="student-project-count">01 proyecto</span><span class="student-arrow">↗</span></a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer"><a class="brand" href="#inicio"><span class="brand-mark">M.</span><span>LA MUESTRA<span class="brand-year"> / 2025—26</span></span></a><p>Hecho con curiosidad, código y muchas ideas.</p><a href="#inicio" class="back-top">VOLVER ARRIBA ↑</a></footer>
+  </body>
+</html>

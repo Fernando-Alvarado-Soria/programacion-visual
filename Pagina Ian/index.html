@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft 3D - Pantalla de Inicio + Inventario Clásico</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #87CEEB; font-family: 'VT323', monospace; color: white; user-select: none; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); color: rgba(255, 255, 255, 0.9); font-size: 28px; line-height: 20px; text-align: center; font-weight: bold; text-shadow: 2px 2px 0 #000; }
+        
+        #weapon { position: absolute; bottom: -20px; right: 15%; font-size: 150px; transform-origin: bottom right; transition: transform 0.1s; filter: drop-shadow(5px 5px 5px rgba(0,0,0,0.5)); }
+        .mining #weapon { transform: rotate(-50deg) translateY(40px) translateX(-20px); }
+        .placing #weapon { transform: rotate(20deg) translateY(-20px); }
+        
+        #coords { position: absolute; top: 15px; left: 15px; font-size: 20px; background: rgba(0,0,0,0.5); padding: 5px 10px; border: 2px solid #555; }
+        #alert-msg { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); font-size: 28px; color: #FF5555; text-shadow: 2px 2px 0 #000; display: none; }
+        #mob-count { position: absolute; top: 55px; left: 15px; font-size: 18px; background: rgba(0,0,0,0.5); padding: 5px 10px; border: 2px solid #555; }
+        
+        #hud-bottom { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        #status-bars { display: flex; justify-content: space-between; width: 380px; font-size: 20px; letter-spacing: 2px; filter: drop-shadow(2px 2px 0 #000); }
+        #hotbar { display: flex; background: rgba(0,0,0,0.6); border: 3px solid #555; padding: 3px; gap: 3px; }
+        .slot-ui { width: 40px; height: 40px; background: rgba(255,255,255,0.2); position: relative; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; }
+        .slot-ui.active { border-color: white; background: rgba(255,255,255,0.4); }
+        .slot-num { position: absolute; top: 2px; left: 4px; font-size: 14px; color: #CCC; text-shadow: 1px 1px 0 #000; }
+        .item-count { position: absolute; bottom: 0px; right: 4px; font-size: 18px; font-weight: bold; text-shadow: 2px 2px 0 #000; }
+        .item-icon { width: 24px; height: 24px; border: 1px solid #000; }
+        
+        .i-1 { background: #55FF55; } .i-2 { background: #8B5A2B; } .i-3 { background: #A0522D; } 
+        .i-4 { background: #2E8B57; } .i-5 { background: #AAAAAA; } .i-6 { background: #333333; }
+        .i-7 { background: #F0A58F; } .i-8 { background: #FFD700; } .i-9 { background: #00FFFF; }
+        
+        .i-10 { background: #8B5A2B; border-radius: 5px; display:flex; justify-content:center; align-items:center;} .i-10::after { content: '⛏️'; font-size: 16px; text-shadow: none; }
+        .i-11 { background: #777; border-radius: 5px; display:flex; justify-content:center; align-items:center;} .i-11::after { content: '⛏️'; font-size: 16px; text-shadow: none; }
+        .i-12 { background: #FFF; border-radius: 5px; display:flex; justify-content:center; align-items:center;} .i-12::after { content: '⛏️'; font-size: 16px; text-shadow: none; }
+
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; pointer-events: all; }
+        
+        /* DISEÑO DE LA PANTALLA DE INICIO */
+        #start-screen { 
+            background-color: #4a3424;
+            background-image: 
+                linear-gradient(45deg, #3a2718 25%, transparent 25%, transparent 75%, #3a2718 75%, #3a2718),
+                linear-gradient(45deg, #3a2718 25%, transparent 25%, transparent 75%, #3a2718 75%, #3a2718);
+            background-size: 32px 32px;
+            background-position: 0 0, 16px 16px;
+            z-index: 20; 
+        }
+        .start-container { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; max-width: 450px; background: rgba(0,0,0,0.4); padding: 30px; border: 4px solid #000; }
+        .start-title { color: #fff; font-size: 65px; text-align: center; margin: 0; text-shadow: 4px 4px 0px #000; letter-spacing: 2px; }
+        .controls-info { font-size: 22px; text-align: center; color: #DDD; margin-bottom: 10px; text-shadow: 2px 2px 0px #000; }
+        .mc-button { width: 100%; padding: 12px; background-color: #c6c6c6; color: #333; font-family: 'VT323', monospace; font-size: 28px; border: 4px solid; border-top-color: #ffffff; border-left-color: #ffffff; border-bottom-color: #555555; border-right-color: #555555; cursor: pointer; text-align: center; box-shadow: inset -2px -2px 0px rgba(0,0,0,0.2); transition: all 0.1s; }
+        .mc-button:hover { background-color: #99ccff; color: #000; }
+        .mc-button:active { border-top-color: #555555; border-left-color: #555555; border-bottom-color: #ffffff; border-right-color: #ffffff; background-color: #a0a0a0; box-shadow: inset 2px 2px 0px rgba(0,0,0,0.2); }
+        .button-row { display: flex; gap: 10px; width: 100%; }
+        .version-text { position: absolute; bottom: 10px; left: 10px; color: white; font-size: 20px; text-shadow: 2px 2px 0px #000; }
+
+        #death-screen { display: none; background: rgba(200,0,0,0.5); z-index: 25; }
+        
+        /* DISEÑO EXACTO INVENTARIO CLÁSICO */
+        #inventory-screen { display: none; background: rgba(0,0,0,0.7); z-index: 15; }
+        .mc-gui { background-color: #c6c6c6; border: 4px solid; border-top-color: #fff; border-left-color: #fff; border-bottom-color: #555; border-right-color: #555; padding: 10px 14px 14px 14px; display: flex; flex-direction: column; font-family: 'VT323', monospace; color: #373737; image-rendering: pixelated; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .mc-top-section { display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 8px; gap: 30px; }
+        .mc-player-area { display: flex; gap: 6px; align-items: flex-start; margin-top: 5px;}
+        .mc-armor-slots { display: flex; flex-direction: column; gap: 4px; }
+        .mc-player-preview { width: 75px; height: 110px; background: #000; display: flex; justify-content: center; align-items: center; position: relative; border-radius: 2px;}
+        .mc-player-preview::after { content: '🧍'; font-size: 60px; } 
+        
+        .mc-crafting-area { display: flex; flex-direction: column; align-items: flex-start; margin-top: 10px;}
+        .mc-crafting-title { font-size: 22px; margin-bottom: 4px; line-height: 1; text-shadow: 1px 1px 0 rgba(255,255,255,0.5); }
+        .mc-crafting-grid-container { display: flex; align-items: center; gap: 15px; }
+        .mc-2x2 { display: grid; grid-template-columns: repeat(2, 36px); grid-template-rows: repeat(2, 36px); gap: 4px; }
+        
+        .mc-slot { width: 36px; height: 36px; background-color: #8b8b8b; border: 2px solid; border-top-color: #373737; border-left-color: #373737; border-bottom-color: #fff; border-right-color: #fff; display: flex; justify-content: center; align-items: center; position: relative; }
+        .mc-slot:hover { background-color: #999; }
+        .mc-slot.output { width: 44px; height: 44px; }
+        .mc-arrow { font-size: 35px; color: #777; font-family: sans-serif; margin-bottom: 5px; }
+        
+        .mc-inventory-grid { display: grid; grid-template-columns: repeat(9, 36px); grid-template-rows: repeat(3, 36px); gap: 4px; }
+        .mc-hotbar-grid { display: grid; grid-template-columns: repeat(9, 36px); grid-template-rows: 36px; gap: 4px; margin-top: 8px; }
+        
+        .draggable-item { width: 32px; height: 32px; cursor: grab; display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold; color: white; text-shadow: 1px 1px 0 #000; position: relative; z-index: 20;}
+        .draggable-item:active { cursor: grabbing; }
+        .badge { position: absolute; bottom: -4px; right: 0px; font-size: 16px; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; font-family: 'VT323', monospace; }
+        
+        .mini-craft-btns { display: flex; gap: 4px; margin-top: 15px; }
+        .mini-btn { padding: 4px 6px; background: #c6c6c6; border: 2px solid; border-top-color: #fff; border-left-color: #fff; border-bottom-color: #555; border-right-color: #555; cursor: pointer; font-family: 'VT323', monospace; font-size: 16px; color: #333; }
+        .mini-btn:active { border-top-color: #555; border-left-color: #555; border-bottom-color: #fff; border-right-color: #fff; background: #b0b0b0; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="ui-layer">
+        <div id="crosshair">+</div>
+        <div id="coords">X: 0 Y: 0 Z: 0</div>
+        <div id="alert-msg">¡Necesitas un pico!</div>
+        <div id="mob-count">Criaturas: 0</div>
+        <div id="weapon">🖐️</div>
+        
+        <div id="hud-bottom">
+            <div id="status-bars"><div id="health-bar"></div><div id="hunger-bar"></div></div>
+            <div id="hotbar"></div>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE INICIO ACTUALIZADA -->
+    <div id="start-screen" class="screen">
+        <div class="start-container">
+            <h1 class="start-title">MI JUEGO WEB</h1>
+            <p class="controls-info"><b>[1-9]</b> Bloques | <b>[E]</b> Inventario<br><b>[Clic Izq]</b> Picar | <b>[Clic Der]</b> Poner</p>
+            
+            <button id="start-btn" class="mc-button">Un Jugador (Jugar)</button>
+            <button class="mc-button" onclick="alert('Multijugador en desarrollo...')">Multijugador</button>
+            
+            <div class="button-row">
+                <button class="mc-button" onclick="alert('Opciones en desarrollo...')">Opciones</button>
+                <button class="mc-button" onclick="window.close()">Salir</button>
+            </div>
+        </div>
+        <div class="version-text">v1.0.1 Web Edition</div>
+    </div>
+    
+    <!-- INVENTARIO CLÁSICO[cite: 3] -->
+    <div id="inventory-screen" class="screen">
+        <div class="mc-gui">
+            <div class="mc-top-section">
+                <div class="mc-player-area">
+                    <div class="mc-armor-slots">
+                        <div class="mc-slot" title="Casco"></div>
+                        <div class="mc-slot" title="Pechera"></div>
+                        <div class="mc-slot" title="Pantalones"></div>
+                        <div class="mc-slot" title="Botas"></div>
+                    </div>
+                    <div class="mc-player-preview"></div>
+                </div>
+                
+                <div class="mc-crafting-area">
+                    <div class="mc-crafting-title">Crafting</div>
+                    <div class="mc-crafting-grid-container">
+                        <div class="mc-2x2">
+                            <div class="mc-slot" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                            <div class="mc-slot" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                            <div class="mc-slot" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                            <div class="mc-slot" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                        </div>
+                        <div class="mc-arrow">➔</div>
+                        <div class="mc-slot output" id="craft-output"></div>
+                    </div>
+                    <div class="mini-craft-btns">
+                        <button class="mini-btn" onclick="craftTool(10)">⛏️ Mad</button>
+                        <button class="mini-btn" onclick="craftTool(11)">⛏️ Pie</button>
+                        <button class="mini-btn" onclick="craftTool(12)">⛏️ Hie</button>
+                    </div>
+                    <div id="craft-msg" style="color:#d32f2f; font-weight:bold; height:15px; font-size: 16px; margin-top:4px;"></div>
+                </div>
+            </div>
+            
+            <div class="mc-inventory-grid" id="main-inventory-grid"></div>
+            <div class="mc-hotbar-grid" id="hotbar-inventory-grid"></div>
+        </div>
+    </div>
+
+    <div id="death-screen" class="screen">
+        <h1 style="color:white; text-shadow: 4px 4px 0 #000; font-size: 60px;">¡HAS MUERTO!</h1>
+        <button class="mc-button" style="max-width: 300px;" onclick="location.reload()">RESPAWN</button>
+    </div>
+
+    <script>
+        const BS = 3.0; // Bloques gigantes
+        let health = 10, hunger = 10, activeSlot = 1, inInventoryMode = false;
+        let inventory = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0 };
+        const blockNames = {1:'Pasto', 2:'Tierra', 3:'Madera', 4:'Hojas', 5:'Piedra', 6:'Carbón', 7:'Hierro', 8:'Oro', 9:'Diamante'};
+        
+        function updateStatusBars() {
+            let hpStr = "", hgStr = "";
+            for(let i=0; i<10; i++) hpStr += (i < health) ? "❤️️" : "🖤";
+            for(let i=0; i<10; i++) hgStr += (i < hunger) ? "🍗" : "🦴";
+            document.getElementById('health-bar').innerText = hpStr;
+            document.getElementById('hunger-bar').innerText = hgStr;
+            if(health <= 0) { document.exitPointerLock(); document.getElementById('death-screen').style.display = 'flex'; isLocked = false; }
+        }
+        setInterval(() => { if(health > 0 && !inInventoryMode) { if(hunger > 0) hunger--; else health--; updateStatusBars(); } }, 15000); 
+
+        function updateWeaponVisual() {
+            const weaponUI = document.getElementById('weapon');
+            let hasPickaxe = inventory[10] > 0 || inventory[11] > 0 || inventory[12] > 0;
+            weaponUI.innerText = hasPickaxe ? '⛏️' : '🖐️';
+        }
+
+        function updateHotbar() {
+            let hotbarHTML = "";
+            for(let i=1; i<=9; i++) {
+                let activeClass = (i === activeSlot) ? "active" : "";
+                let count = inventory[i] > 0 ? inventory[i] : "";
+                hotbarHTML += `<div class="slot-ui ${activeClass}"><span class="slot-num">${i}</span>${inventory[i] > 0 ? `<div class="item-icon i-${i}"></div>` : ''}<span class="item-count">${count}</span></div>`;
+            }
+            document.getElementById('hotbar').innerHTML = hotbarHTML;
+            updateWeaponVisual();
+        }
+        updateStatusBars(); updateHotbar();
+
+        function allowDrop(ev) { ev.preventDefault(); }
+        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+        function drop(ev) {
+            ev.preventDefault(); var data = ev.dataTransfer.getData("text");
+            if(ev.target.classList.contains('mc-slot') && ev.target.children.length === 0) ev.target.appendChild(document.getElementById(data));
+        }
+
+        function craftTool(id) {
+            let msg = document.getElementById('craft-msg'); msg.style.color = "#d32f2f"; 
+            if (id === 10) { if (inventory[3] >= 3) { inventory[3] -= 3; inventory[10]++; msg.innerText = "¡Pico de madera!"; msg.style.color = "#1B5E20"; } else { msg.innerText = "¡Falta Madera!"; } } 
+            else if (id === 11) { if (inventory[5] >= 3) { inventory[5] -= 3; inventory[11]++; msg.innerText = "¡Pico de piedra!"; msg.style.color = "#1B5E20"; } else { msg.innerText = "¡Falta Piedra!"; } } 
+            else if (id === 12) { if (inventory[7] >= 3) { inventory[7] -= 3; inventory[12]++; msg.innerText = "¡Pico de hierro!"; msg.style.color = "#1B5E20"; } else { msg.innerText = "¡Falta Hierro!"; } }
+            populateVisualInventory(); updateHotbar(); setTimeout(() => { msg.innerText = ""; }, 2500);
+        }
+
+        function populateVisualInventory() {
+            const mainGrid = document.getElementById('main-inventory-grid'); 
+            const hotbarGrid = document.getElementById('hotbar-inventory-grid');
+            mainGrid.innerHTML = ''; hotbarGrid.innerHTML = '';
+            
+            for(let i = 0; i < 27; i++) {
+                let slot = document.createElement('div'); slot.className = 'mc-slot'; slot.setAttribute('ondrop', 'drop(event)'); slot.setAttribute('ondragover', 'allowDrop(event)');
+                mainGrid.appendChild(slot);
+            }
+            for(let i = 0; i < 9; i++) {
+                let slot = document.createElement('div'); slot.className = 'mc-slot'; slot.setAttribute('ondrop', 'drop(event)'); slot.setAttribute('ondragover', 'allowDrop(event)');
+                hotbarGrid.appendChild(slot);
+            }
+
+            let currentSlot = 0;
+            for(let i=1; i<=12; i++) {
+                if(inventory[i] > 0) {
+                    let item = document.createElement('div'); item.className = `draggable-item i-${i}`; item.id = `drag-item-${i}`; item.draggable = true; item.ondragstart = drag; item.title = blockNames[i] || 'Pico';
+                    item.innerHTML = `<span class="badge">${inventory[i]}</span>`; 
+                    
+                    if (currentSlot < 27) { mainGrid.children[currentSlot].appendChild(item); } 
+                    else if (currentSlot < 36) { hotbarGrid.children[currentSlot - 27].appendChild(item); }
+                    currentSlot++;
+                }
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if(e.key >= '1' && e.key <= '9' && !inInventoryMode) { activeSlot = parseInt(e.key); updateHotbar(); }
+            if(e.code === 'KeyE' && health > 0) {
+                const invScreen = document.getElementById('inventory-screen');
+                if (isLocked) { document.exitPointerLock(); inInventoryMode = true; populateVisualInventory(); invScreen.style.display = 'flex'; } 
+                else if (inInventoryMode) { inInventoryMode = false; invScreen.style.display = 'none'; document.body.requestPointerLock(); }
+            }
+        });
+
+        // CONFIGURACIÓN THREE.JS
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5); dirLight.position.set(50 * BS, 100 * BS, 50 * BS); scene.add(dirLight);
+
+        function createPixelTexture(type) {
+            const canvas = document.createElement('canvas'); canvas.width = 8; canvas.height = 8; const ctx = canvas.getContext('2d');
+            for (let x = 0; x < 8; x++) {
+                for (let y = 0; y < 8; y++) {
+                    let noise = (Math.random() - 0.5) * 20; let isBorder = (x===0||x===7||y===0||y===7);
+                    if (type === 'grass') ctx.fillStyle = `rgb(${70+noise}, ${160+noise}, ${50+noise})`;
+                    else if (type === 'dirt') ctx.fillStyle = `rgb(${120+noise}, ${80+noise}, ${40+noise})`;
+                    else if (type === 'wood') ctx.fillStyle = `rgb(${110+noise}, ${70+noise}, ${30+noise})`;
+                    else if (type === 'leaves') ctx.fillStyle = `rgb(${40+noise}, ${120+noise}, ${40+noise})`;
+                    else if (type === 'stone') ctx.fillStyle = `rgb(${120+noise-(isBorder?15:0)}, ${120+noise-(isBorder?15:0)}, ${120+noise-(isBorder?15:0)})`;
+                    else {
+                        let c = 110 + noise; ctx.fillStyle = `rgb(${c},${c},${c})`;
+                        if (Math.random() > 0.8) { if (type === 'coal') ctx.fillStyle = '#222222'; if (type === 'iron') ctx.fillStyle = '#D8A080'; if (type === 'gold') ctx.fillStyle = '#FFD700'; if (type === 'diamond') ctx.fillStyle = '#00FFFF'; }
+                    }
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+            const texture = new THREE.CanvasTexture(canvas); texture.magFilter = THREE.NearestFilter; return texture;
+        }
+
+        const materials = {
+            1: new THREE.MeshLambertMaterial({ map: createPixelTexture('grass') }), 2: new THREE.MeshLambertMaterial({ map: createPixelTexture('dirt') }),
+            3: new THREE.MeshLambertMaterial({ map: createPixelTexture('wood') }), 4: new THREE.MeshLambertMaterial({ map: createPixelTexture('leaves'), transparent: true, opacity: 0.9 }),
+            5: new THREE.MeshLambertMaterial({ map: createPixelTexture('stone') }), 6: new THREE.MeshLambertMaterial({ map: createPixelTexture('coal') }),
+            7: new THREE.MeshLambertMaterial({ map: createPixelTexture('iron') }), 8: new THREE.MeshLambertMaterial({ map: createPixelTexture('gold') }),
+            9: new THREE.MeshLambertMaterial({ map: createPixelTexture('diamond') })
+        };
+
+        const blockGeometry = new THREE.BoxGeometry(BS, BS, BS);
+        const worldBlocks = new Map();
+        const blockMeshes = new Map();
+
+        function getBlockKey(x, y, z) { return `${x},${y},${z}`; }
+        function getBlock(x, y, z) { return worldBlocks.get(getBlockKey(x, y, z)) || 0; }
+        function isExposed(x, y, z) { return getBlock(x+1,y,z) === 0 || getBlock(x-1,y,z) === 0 || getBlock(x,y+1,z) === 0 || getBlock(x,y-1,z) === 0 || getBlock(x,y,z+1) === 0 || getBlock(x,y,z-1) === 0; }
+
+        function updateMeshVisibility(x, y, z) {
+            let type = getBlock(x,y,z); let key = getBlockKey(x,y,z);
+            if (type === 0) { if (blockMeshes.has(key)) { scene.remove(blockMeshes.get(key)); blockMeshes.delete(key); } return; }
+            if (isExposed(x,y,z)) {
+                if (!blockMeshes.has(key)) {
+                    const mesh = new THREE.Mesh(blockGeometry, materials[type]);
+                    mesh.position.set(x * BS + (BS/2), y * BS + (BS/2), z * BS + (BS/2));
+                    scene.add(mesh); blockMeshes.set(key, mesh);
+                }
+            } else { if (blockMeshes.has(key)) { scene.remove(blockMeshes.get(key)); blockMeshes.delete(key); } }
+        }
+
+        function setBlock(x, y, z, type) {
+            if (type === 0) worldBlocks.delete(getBlockKey(x,y,z)); else worldBlocks.set(getBlockKey(x,y,z), type);
+            updateMeshVisibility(x, y, z); updateMeshVisibility(x+1, y, z); updateMeshVisibility(x-1, y, z);
+            updateMeshVisibility(x, y+1, z); updateMeshVisibility(x, y-1, z); updateMeshVisibility(x, y, z+1); updateMeshVisibility(x, y, z-1);
+        }
+
+        const CHUNK_SIZE = 16; const RENDER_DIST = 1; const generatedChunks = new Set();
+        function generateChunk(cx, cz) {
+            const chunkKey = `${cx},${cz}`; if (generatedChunks.has(chunkKey)) return; generatedChunks.add(chunkKey);
+            let startX = cx * CHUNK_SIZE; let startZ = cz * CHUNK_SIZE; let blocksToUpdate = [];
+            function placeGenBlock(x, y, z, type) { worldBlocks.set(getBlockKey(x,y,z), type); blocksToUpdate.push({x,y,z}); }
+
+            for (let x = startX; x < startX + CHUNK_SIZE; x++) {
+                for (let z = startZ; z < startZ + CHUNK_SIZE; z++) {
+                    let heightOffset = Math.floor(Math.sin(x*0.1)*Math.cos(z*0.1)*4 + Math.sin(x*0.05)*2);
+                    let surfaceY = heightOffset;
+                    placeGenBlock(x, surfaceY, z, 1); placeGenBlock(x, surfaceY - 1, z, 2); placeGenBlock(x, surfaceY - 2, z, 2);
+                    for (let y = surfaceY - 3; y >= -40; y--) { 
+                        let rand = Math.random(), b = 5;
+                        if (rand < 0.08) b = 6; else if (rand < 0.13) b = 7; else if (rand < 0.15 && y < -10) b = 8; else if (rand < 0.16 && y < -20) b = 9;
+                        placeGenBlock(x, y, z, b);
+                    }
+                    if (Math.random() < 0.02) {
+                        let th = 4 + Math.floor(Math.random()*2);
+                        for (let h=1; h<=th; h++) placeGenBlock(x, surfaceY+h, z, 3);
+                        for (let lx=-1; lx<=1; lx++) for (let lz=-1; lz<=1; lz++) for (let ly=0; ly<=2; ly++) if (!(lx===0 && lz===0 && ly<2)) placeGenBlock(x+lx, surfaceY+th+ly, z+lz, 4);
+                    }
+                }
+            }
+            for(let pos of blocksToUpdate) {
+                updateMeshVisibility(pos.x, pos.y, pos.z);
+                if (pos.x === startX) updateMeshVisibility(pos.x-1, pos.y, pos.z); if (pos.x === startX + CHUNK_SIZE - 1) updateMeshVisibility(pos.x+1, pos.y, pos.z);
+                if (pos.z === startZ) updateMeshVisibility(pos.x, pos.y, pos.z-1); if (pos.z === startZ + CHUNK_SIZE - 1) updateMeshVisibility(pos.x, pos.y, pos.z+1);
+            }
+        }
+
+        const raycaster = new THREE.Raycaster();
+        const weaponUI = document.getElementById('weapon');
+        const miningBlocks = []; const particles = [];    
+
+        function spawnParticles(bx, by, bz, type) {
+            for(let i=0; i<6; i++) {
+                let geom = new THREE.BoxGeometry(0.25 * BS, 0.25 * BS, 0.25 * BS);
+                let mesh = new THREE.Mesh(geom, materials[type]);
+                mesh.position.set(bx * BS + (BS/2), by * BS + (BS/2), bz * BS + (BS/2));
+                let vel = new THREE.Vector3((Math.random()-0.5)*6*BS, Math.random()*5*BS, (Math.random()-0.5)*6*BS);
+                scene.add(mesh); particles.push({ mesh: mesh, vel: vel, life: 1.0 });
+            }
+        }
+
+        function showWarning(text) { let el = document.getElementById('alert-msg'); el.innerText = text; el.style.display = 'block'; setTimeout(() => { el.style.display = 'none'; }, 2000); }
+
+        document.addEventListener('mousedown', (e) => {
+            if (!isLocked || health <= 0) return;
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+
+            if (e.button === 0) {
+                const mobMeshes = [];
+                for (const mob of mobs) mob.traverse(child => {
+                    if (child.isMesh) mobMeshes.push(child);
+                });
+                const mobHits = raycaster.intersectObjects(mobMeshes);
+                if (mobHits.length > 0 && mobHits[0].distance < 5 * BS) {
+                    let mob = mobHits[0].object;
+                    while (mob.parent && !mobs.includes(mob)) mob = mob.parent;
+                    if (mobs.includes(mob)) {
+                        mob.userData.health--;
+                        weaponUI.classList.add('mining');
+                        setTimeout(() => weaponUI.classList.remove('mining'), 150);
+                        if (mob.userData.health <= 0) {
+                            spawnParticles(
+                                Math.round(mob.position.x / BS),
+                                Math.round(mob.position.y / BS),
+                                Math.round(mob.position.z / BS),
+                                mob.userData.type === 'zombie' ? 4 : 5
+                            );
+                            scene.remove(mob);
+                            mobs.splice(mobs.indexOf(mob), 1);
+                            updateMobCount();
+                        }
+                        return;
+                    }
+                }
+            }
+
+            const intersects = raycaster.intersectObjects(Array.from(blockMeshes.values()));
+
+            if (intersects.length > 0 && intersects[0].distance < 5 * BS) { 
+                const hit = intersects[0]; const pos = hit.object.position;
+                const bx = Math.round((pos.x - (BS/2)) / BS); const by = Math.round((pos.y - (BS/2)) / BS); const bz = Math.round((pos.z - (BS/2)) / BS);
+
+                if (e.button === 0) { 
+                    weaponUI.classList.add('mining'); setTimeout(() => weaponUI.classList.remove('mining'), 150);
+                    const blockType = getBlock(bx, by, bz);
+                    if (blockType > 0) {
+                        const blockReq = { 1:0, 2:0, 3:0, 4:0, 5:1, 6:1, 7:2, 8:3, 9:3 }; 
+                        const reqStr = { 1: "Pico Madera", 2: "Pico Piedra", 3: "Pico Hierro" };
+                        let req = blockReq[blockType] || 0; let maxPickaxe = 0;
+                        if (inventory[10] > 0) maxPickaxe = 1; if (inventory[11] > 0) maxPickaxe = 2; if (inventory[12] > 0) maxPickaxe = 3;
+                        
+                        if (maxPickaxe >= req) {
+                            if (!hit.object.userData.isBeingMined) {
+                                hit.object.userData.isBeingMined = true;
+                                miningBlocks.push({ mesh: hit.object, bx: bx, by: by, bz: bz, type: blockType, startTime: performance.now(), duration: 250 });
+                            }
+                        } else { showWarning(`¡Necesitas un ${reqStr[req]} para picar esto!`); }
+                    }
+                } 
+                else if (e.button === 2) { 
+                    if(inventory[activeSlot] > 0) {
+                        weaponUI.classList.add('placing'); setTimeout(() => weaponUI.classList.remove('placing'), 150);
+                        const normal = hit.face.normal; const nx = bx + normal.x, ny = by + normal.y, nz = bz + normal.z;
+                        const pbx = Math.floor(playerPos.x / BS), pby = Math.floor((playerPos.y - 1.5*BS) / BS), pby2 = Math.floor((playerPos.y - 0.5*BS) / BS), pbz = Math.floor(playerPos.z / BS);
+                        
+                        if (!(nx === pbx && (ny === pby || ny === pby2) && nz === pbz)) { 
+                            setBlock(nx, ny, nz, activeSlot); inventory[activeSlot]--; updateHotbar(); 
+                        }
+                    }
+                }
+            }
+        });
+
+        let playerPos = new THREE.Vector3(); let playerVelocity = new THREE.Vector3(); let cameraRotation = { yaw: 0, pitch: 0 }; let isGrounded = false; 
+        let keys = {}; document.addEventListener('keydown', e => keys[e.code] = true); document.addEventListener('keyup', e => keys[e.code] = false);
+        let isLocked = false;
+        
+        // BOTÓN DE PANTALLA DE INICIO CONECTADO AL JUEGO
+        document.getElementById('start-btn').addEventListener('click', () => { if(health > 0) document.body.requestPointerLock(); });
+        document.addEventListener('pointerlockchange', () => { isLocked = document.pointerLockElement === document.body; document.getElementById('start-screen').style.display = (!isLocked && !inInventoryMode && health > 0) ? 'flex' : 'none'; });
+        
+        document.addEventListener('mousemove', (e) => { if (!isLocked) return; cameraRotation.yaw -= e.movementX * 0.002; cameraRotation.pitch -= e.movementY * 0.002; cameraRotation.pitch = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, cameraRotation.pitch)); camera.quaternion.setFromEuler(new THREE.Euler(cameraRotation.pitch, cameraRotation.yaw, 0, 'YXZ')); });
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        function checkCollision(px, py, pz) {
+            const w = 0.3 * BS; const points = [ {dx: -w, dz: -w}, {dx: w, dz: -w}, {dx: -w, dz: w}, {dx: w, dz: w} ];
+            for (let p of points) { 
+                if (getBlock(Math.floor((px + p.dx)/BS), Math.floor((py - 1.5*BS)/BS), Math.floor((pz + p.dz)/BS)) > 0 || 
+                    getBlock(Math.floor((px + p.dx)/BS), Math.floor((py - 0.5*BS)/BS), Math.floor((pz + p.dz)/BS)) > 0) return true; 
+            } return false;
+        }
+
+        const mobs = [];
+
+        function createMob(type) {
+            const mob = new THREE.Group();
+            const colors = {
+                zombie: { skin: 0x4d8b3b, cloth: 0x315d9d, extra: 0x2d5e27 },
+                skeleton: { skin: 0xdedbd1, cloth: 0x303030, extra: 0xb8b5ac },
+                spider: { skin: 0x181818, cloth: 0x4a1111, extra: 0xff2222 }
+            };
+            const palette = colors[type];
+            const addPart = (width, height, depth, color, x, y, z) => {
+                const mesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(width * BS, height * BS, depth * BS),
+                    new THREE.MeshLambertMaterial({ color: color })
+                );
+                mesh.position.set(x * BS, y * BS, z * BS);
+                mob.add(mesh);
+                return mesh;
+            };
+
+            if (type === 'spider') {
+                addPart(1.4, 0.55, 1.8, palette.skin, 0, 0.55, 0);
+                addPart(0.75, 0.7, 0.75, palette.skin, 0, 0.55, -1.25);
+                addPart(0.13, 0.13, 0.13, palette.extra, -0.28, 0.78, -1.67);
+                addPart(0.13, 0.13, 0.13, palette.extra, 0.28, 0.78, -1.67);
+                addPart(0.09, 0.09, 0.13, 0xffaaaa, -0.12, 0.62, -1.68);
+                addPart(0.09, 0.09, 0.13, 0xffaaaa, 0.12, 0.62, -1.68);
+                addPart(0.12, 0.22, 0.12, 0x5c0909, -0.22, 0.34, -1.68);
+                addPart(0.12, 0.22, 0.12, 0x5c0909, 0.22, 0.34, -1.68);
+                for (let side = -1; side <= 1; side += 2) {
+                    for (let row = -1; row <= 1; row++) {
+                        addPart(0.18, 0.18, 1.25, palette.skin, side * 1.1, 0.45, row * 0.6);
+                    }
+                }
+            } else {
+                addPart(0.75, 0.75, 0.75, palette.skin, 0, 2.1, 0);
+                addPart(0.85, 1.05, 0.45, type === 'zombie' ? palette.cloth : palette.extra, 0, 1.05, 0);
+                addPart(0.28, 1.15, 0.28, palette.skin, -0.65, 1.05, 0);
+                addPart(0.28, 1.15, 0.28, palette.skin, 0.65, 1.05, 0);
+                addPart(0.32, 1.05, 0.32, type === 'zombie' ? palette.extra : palette.cloth, -0.28, 0.15, 0);
+                addPart(0.32, 1.05, 0.32, type === 'zombie' ? palette.extra : palette.cloth, 0.28, 0.15, 0);
+
+                if (type === 'skeleton') {
+                    addPart(0.12, 1.1, 0.12, palette.extra, -0.9, 1.4, 0);
+                    addPart(0.12, 1.1, 0.12, palette.extra, -0.9, 1.4, -0.15);
+                    addPart(0.16, 0.16, 0.13, 0x111111, -0.22, 2.22, -0.39);
+                    addPart(0.16, 0.16, 0.13, 0x111111, 0.22, 2.22, -0.39);
+                    addPart(0.10, 0.18, 0.13, 0x111111, 0, 2.02, -0.39);
+                    addPart(0.42, 0.08, 0.13, 0x777777, 0, 1.84, -0.39);
+                    addPart(0.08, 0.16, 0.13, 0x111111, -0.15, 1.78, -0.39);
+                    addPart(0.08, 0.16, 0.13, 0x111111, 0.15, 1.78, -0.39);
+                } else {
+                    addPart(0.18, 0.18, 0.18, 0xff4a4a, -0.22, 2.28, -0.39);
+                    addPart(0.18, 0.18, 0.18, 0xff4a4a, 0.22, 2.28, -0.39);
+                    addPart(0.14, 0.12, 0.13, 0x1b3320, -0.22, 2.12, -0.39);
+                    addPart(0.14, 0.12, 0.13, 0x1b3320, 0.22, 2.12, -0.39);
+                    addPart(0.32, 0.10, 0.13, 0x1b3320, 0, 1.93, -0.39);
+                    addPart(0.10, 0.18, 0.13, 0x1b3320, -0.12, 1.96, -0.39);
+                    addPart(0.10, 0.18, 0.13, 0x1b3320, 0.12, 1.96, -0.39);
+                }
+            }
+
+            mob.userData.type = type;
+            mob.userData.health = type === 'spider' ? 8 : 10;
+            mob.userData.lastAttack = 0;
+            scene.add(mob);
+            return mob;
+        }
+
+        function spawnMob(type, distance = 12) {
+            const angle = Math.random() * Math.PI * 2;
+            const x = playerPos.x + Math.cos(angle) * distance * BS;
+            const z = playerPos.z + Math.sin(angle) * distance * BS;
+            const blockX = Math.floor(x / BS);
+            const blockZ = Math.floor(z / BS);
+            let blockY = -1;
+
+            for (let y = 20; y >= -20; y--) {
+                if (getBlock(blockX, y, blockZ) > 0) {
+                    blockY = y;
+                    break;
+                }
+            }
+
+            if (blockY < -20) return;
+            const mob = createMob(type);
+            mob.position.set((blockX + 0.5) * BS, (blockY + 1) * BS, (blockZ + 0.5) * BS);
+            mobs.push(mob);
+            updateMobCount();
+        }
+
+        function updateMobCount() {
+            document.getElementById('mob-count').innerText =
+                `Criaturas: ${mobs.length} | Z: ${mobs.filter(m => m.userData.type === 'zombie').length} E: ${mobs.filter(m => m.userData.type === 'skeleton').length} A: ${mobs.filter(m => m.userData.type === 'spider').length}`;
+        }
+
+        function spawnInitialMobs() {
+            spawnMob('zombie', 10);
+            spawnMob('zombie', 14);
+            spawnMob('skeleton', 16);
+            spawnMob('spider', 12);
+        }
+
+        generateChunk(0, 0);
+        setTimeout(() => {
+            let startYBlock = Math.floor(Math.sin(0)*Math.cos(0)*4 + Math.sin(0)*2) + 2;
+            playerPos.y = (startYBlock * BS) + BS + 1.5*BS;
+            playerVelocity.y = 0;
+            camera.position.copy(playerPos);
+            spawnInitialMobs();
+        }, 50);
+
+        setInterval(() => {
+            if (health > 0 && !inInventoryMode && isLocked && mobs.length < 8) {
+                const types = ['zombie', 'skeleton', 'spider'];
+                spawnMob(types[Math.floor(Math.random() * types.length)], 14 + Math.random() * 8);
+            }
+        }, 30000);
+        let clock = new THREE.Clock(); let prevFallSpeed = 0; let lastChunkX = null, lastChunkZ = null; 
+
+        function animate() {
+            requestAnimationFrame(animate); if(health <= 0) return;
+            let delta = Math.min(clock.getDelta(), 0.1); let now = performance.now();
+
+            for (let i = miningBlocks.length - 1; i >= 0; i--) {
+                let mb = miningBlocks[i]; let progress = (now - mb.startTime) / mb.duration;
+                if (progress >= 1) { spawnParticles(mb.bx, mb.by, mb.bz, mb.type); setBlock(mb.bx, mb.by, mb.bz, 0); inventory[mb.type]++; updateHotbar(); miningBlocks.splice(i, 1); } 
+                else { let shake = (Math.random() - 0.5) * 0.15 * BS; let scale = 1 - (progress * 0.25); mb.mesh.position.set(mb.bx * BS + (BS/2) + shake, mb.by * BS + (BS/2) + shake, mb.bz * BS + (BS/2) + shake); mb.mesh.scale.set(scale, scale, scale); }
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i]; p.life -= delta * 1.5;
+                if (p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); } 
+                else { p.vel.y -= (15 * BS) * delta; p.mesh.position.addScaledVector(p.vel, delta); p.mesh.rotation.x += delta * 10; p.mesh.rotation.y += delta * 10; p.mesh.scale.setScalar(p.life); }
+            }
+
+            if (!inInventoryMode) {
+                for (const mob of mobs) {
+                    const dx = playerPos.x - mob.position.x;
+                    const dz = playerPos.z - mob.position.z;
+                    const distance = Math.sqrt(dx * dx + dz * dz);
+
+                    mob.rotation.y = Math.atan2(dx, dz);
+
+                    if (distance > 2.2 * BS) {
+                        const speed = (mob.userData.type === 'spider' ? 3.2 : 2.1) * BS * delta;
+                        mob.position.x += (dx / distance) * speed;
+                        mob.position.z += (dz / distance) * speed;
+
+                        const groundX = Math.floor(mob.position.x / BS);
+                        const groundZ = Math.floor(mob.position.z / BS);
+                        for (let y = 18; y >= -20; y--) {
+                            if (getBlock(groundX, y, groundZ) > 0) {
+                                const groundY = (y + 1) * BS;
+                                if (Math.abs(mob.position.y - groundY) < 3 * BS) mob.position.y = groundY;
+                                break;
+                            }
+                        }
+                    } else if (now - mob.userData.lastAttack > 1600) {
+                        mob.userData.lastAttack = now;
+                        health = Math.max(0, health - (mob.userData.type === 'skeleton' ? 2 : 1));
+                        updateStatusBars();
+                        showWarning(`¡Un ${mob.userData.type === 'zombie' ? 'zombi' : mob.userData.type === 'skeleton' ? 'esqueleto' : 'araña'} te atacó!`);
+                    }
+                }
+            }
+
+            let pCx = Math.floor((playerPos.x / BS) / CHUNK_SIZE); let pCz = Math.floor((playerPos.z / BS) / CHUNK_SIZE);
+            if (pCx !== lastChunkX || pCz !== lastChunkZ) { lastChunkX = pCx; lastChunkZ = pCz; for(let dx = -RENDER_DIST; dx <= RENDER_DIST; dx++) { for(let dz = -RENDER_DIST; dz <= RENDER_DIST; dz++) generateChunk(pCx + dx, pCz + dz); } }
+
+            if (isLocked) {
+                let moveSpeed = (6.0 * BS) * delta;
+                let forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion); forward.y = 0; forward.normalize();
+                let side = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion); side.y = 0; side.normalize();
+                let moveDir = new THREE.Vector3();
+                if (keys['KeyW']) moveDir.add(forward); if (keys['KeyS']) moveDir.sub(forward); if (keys['KeyD']) moveDir.add(side); if (keys['KeyA']) moveDir.sub(side);
+                if (moveDir.lengthSq() > 0) moveDir.normalize();
+
+                let nextX = playerPos.x + moveDir.x * moveSpeed; if (!checkCollision(nextX, playerPos.y, playerPos.z)) playerPos.x = nextX;
+                let nextZ = playerPos.z + moveDir.z * moveSpeed; if (!checkCollision(playerPos.x, playerPos.y, nextZ)) playerPos.z = nextZ;
+
+                prevFallSpeed = playerVelocity.y; playerVelocity.y -= (25.0 * BS) * delta; 
+                if (keys['Space'] && isGrounded) { playerVelocity.y = 8.5 * BS; isGrounded = false; }
+                let nextY = playerPos.y + playerVelocity.y * delta;
+
+                if (playerVelocity.y < 0) { 
+                    const w = 0.3 * BS; let onGround = false; let feetBlockY = Math.floor((nextY - 1.5*BS) / BS);
+                    const points = [ {dx: -w, dz: -w}, {dx: w, dz: -w}, {dx: -w, dz: w}, {dx: w, dz: w}, {dx:0, dz:0} ];
+                    for(let p of points) { if(getBlock(Math.floor((playerPos.x + p.dx)/BS), feetBlockY, Math.floor((playerPos.z + p.dz)/BS)) > 0) { onGround = true; break; } }
+                    
+                    if (onGround) { playerPos.y = (feetBlockY * BS) + BS + 1.5*BS; if(prevFallSpeed < -14*BS) { health -= Math.floor(Math.abs(prevFallSpeed/BS) - 13); updateStatusBars(); } playerVelocity.y = 0; isGrounded = true; } 
+                    else { playerPos.y = nextY; isGrounded = false; }
+                } else { if (checkCollision(playerPos.x, nextY, playerPos.z)) playerVelocity.y = 0; else playerPos.y = nextY; isGrounded = false; }
+                
+                camera.position.copy(playerPos);
+                document.getElementById('coords').innerText = `X: ${Math.floor(playerPos.x/BS)} Y: ${Math.floor(playerPos.y/BS)} Z: ${Math.floor(playerPos.z/BS)}`;
+            }
+            renderer.render(scene, camera);
+        }
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+        animate();
+    </script>
+</body>
+</html>

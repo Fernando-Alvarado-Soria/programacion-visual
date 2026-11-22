@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bear Dash - Aventura Salvaje</title>
+  <style>
+    :root { --gold:#ffcc4d; --cream:#fff6dc; --brown:#3b2418; --green:#66a94d; }
+    * { box-sizing:border-box; }
+    body { margin:0; overflow:hidden; background:#10170f; color:white; font-family:"Trebuchet MS",Arial,sans-serif; }
+    canvas { display:block; width:100vw; height:100vh; }
+    #app { position:fixed; inset:0; }
+    .panel {
+      position:absolute; inset:0; display:grid; place-items:center;
+      background:linear-gradient(145deg,rgba(20,50,26,.86),rgba(12,22,13,.96));
+      backdrop-filter:blur(7px); z-index:20;
+    }
+    .hidden { display:none !important; }
+    .card {
+      width:min(920px,92vw); max-height:92vh; overflow:auto;
+      background:rgba(255,246,220,.96); color:var(--brown);
+      border:5px solid #6e4528; border-radius:26px;
+      box-shadow:0 18px 60px rgba(0,0,0,.45); padding:24px;
+    }
+    h1,h2,h3 { margin:0 0 12px; }
+    h1 { color:#b96f39; font-size:clamp(42px,7vw,74px); text-shadow:3px 3px 0 #fff; text-align:center; }
+    h2 { font-size:28px; }
+    .subtitle { text-align:center; margin:-8px 0 22px; color:#75583f; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+    .money { background:#fff1bb; border:3px solid #dfad48; border-radius:999px; padding:8px 15px; font-size:20px; font-weight:bold; }
+    .tabs { display:flex; gap:8px; margin-bottom:18px; }
+    button {
+      border:0; border-radius:12px; padding:11px 16px; cursor:pointer;
+      background:#8fae54; color:white; font-weight:bold; font-size:16px;
+      box-shadow:0 5px 0 #587737; transition:.12s;
+    }
+    button:hover { transform:translateY(-2px); filter:brightness(1.07); }
+    button:active { transform:translateY(3px); box-shadow:0 2px 0 #587737; }
+    button.secondary { background:#c78955; box-shadow:0 5px 0 #895936; }
+    button.gold { background:#eabf50; color:#553818; box-shadow:0 5px 0 #af7e28; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .map-card,.skin-card {
+      border:3px solid #d8c79d; border-radius:18px; padding:14px; background:#fffaf0;
+      text-align:center; cursor:pointer;
+    }
+    .map-card.selected,.skin-card.selected { border-color:#57a63c; box-shadow:0 0 0 4px rgba(87,166,60,.18); }
+    .map-preview { height:110px; border-radius:12px; margin-bottom:10px; position:relative; overflow:hidden; }
+    .forest { background:linear-gradient(#69b9de 0 35%,#70a84c 35%); }
+    .desert { background:linear-gradient(#79bde0 0 35%,#dfbd70 35%); }
+    .snow { background:linear-gradient(#99d0e8 0 35%,#edf5f4 35%); }
+    .map-preview:after { content:"♟"; position:absolute; left:50%; top:55%; transform:translate(-50%,-50%); font-size:38px; filter:drop-shadow(2px 3px 2px #0005); }
+    .skin-preview { width:82px; height:82px; border-radius:50%; margin:0 auto 10px; display:grid; place-items:center; font-size:54px; background:#eee0bd; }
+    .price { color:#946a25; font-weight:bold; }
+    #hud {
+      position:absolute; left:18px; right:18px; top:14px; z-index:10;
+      display:flex; justify-content:space-between; pointer-events:none;
+    }
+    .hudbox { background:rgba(35,28,20,.82); border:2px solid rgba(255,255,255,.35); border-radius:14px; padding:9px 13px; text-shadow:1px 2px 2px #000; }
+    #message {
+      position:absolute; left:50%; top:42%; transform:translate(-50%,-50%);
+      z-index:12; display:none; text-align:center;
+      font-size:clamp(38px,8vw,82px); font-weight:bold;
+      text-shadow:0 5px 0 #50301c,0 8px 20px #000;
+    }
+    .controls { text-align:center; color:#7a6249; margin-top:14px; }
+    @media(max-width:700px) { .grid { grid-template-columns:1fr; } .card { padding:16px; } }
+  </style>
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+  <div id="hud" class="hidden">
+    <div class="hudbox">Frutas: <b id="score">0</b>/8</div>
+    <div class="hudbox" id="mapName">Bosque</div>
+  </div>
+  <div id="message"></div>
+
+  <div id="menu" class="panel">
+    <div class="card">
+      <h1>BEAR DASH</h1>
+      <p class="subtitle">¡Atrapa las frutas antes que los osos NPC!</p>
+      <div class="topbar">
+        <div class="tabs">
+          <button id="tabMaps">Elegir mapa</button>
+          <button id="tabSkins" class="secondary">Tienda de skins</button>
+        </div>
+        <div class="money">🪙 <span id="money">0</span></div>
+      </div>
+      <section id="mapsSection"></section>
+      <section id="skinsSection" class="hidden"></section>
+      <button id="play" class="gold" style="width:100%;margin-top:18px;font-size:22px">JUGAR PARTIDA</button>
+      <div class="controls">WASD o flechas para mover · Agarra las 8 frutas · Esquiva a los NPC</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W=innerWidth,H=innerHeight;
+function resize(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight; }
+addEventListener('resize',resize); resize();
+
+let coins=Number(localStorage.getItem('bearCoins')||0);
+let owned=JSON.parse(localStorage.getItem('bearOwned')||'["classic"]');
+let selectedSkin=localStorage.getItem('bearSkin')||'classic';
+let selectedMap=localStorage.getItem('bearMap')||'forest';
+
+const skins=[
+  {id:'classic',name:'Oso clásico',emoji:'🐻',price:0},
+  {id:'panda',name:'Panda',emoji:'🐼',price:150},
+  {id:'polar',name:'Oso polar',emoji:'🐻‍❄️',price:300},
+  {id:'gummy',name:'Osito gominola',emoji:'🧸',price:500}
+];
+const maps=[
+  {id:'forest',name:'Bosque verde',class:'forest',ground:'#70a84c',detail:'#315e32'},
+  {id:'desert',name:'Desierto Dorado',class:'desert',ground:'#dfbd70',detail:'#a66d31'},
+  {id:'snow',name:'Valle nevado',class:'snow',ground:'#edf5f4',detail:'#77aeb8'}
+];
+
+const menu=document.getElementById('menu'), mapsSection=document.getElementById('mapsSection'), skinsSection=document.getElementById('skinsSection');
+function save(){ localStorage.setItem('bearCoins',coins); localStorage.setItem('bearOwned',JSON.stringify(owned)); localStorage.setItem('bearSkin',selectedSkin); localStorage.setItem('bearMap',selectedMap); document.getElementById('money').textContent=coins; }
+
+function renderMaps(){
+  let html='<div class="grid">';
+  maps.forEach(m=>{
+    const subtitle=m.id==='forest'?'Bosque de frutas':m.id==='desert'?'Oasis competitivo':'Pista helada';
+    html+='<div class="map-card '+(m.id===selectedMap?'selected':'')+'" data-map="'+m.id+'">'+
+      '<div class="map-preview '+m.class+'"></div><h3>'+m.name+'</h3><span>'+subtitle+'</span></div>';
+  });
+  mapsSection.innerHTML=html+'</div>';
+  mapsSection.querySelectorAll('.map-card').forEach(el=>el.onclick=()=>{selectedMap=el.dataset.map;save();renderMaps();});
+}
+function renderSkins(){
+  let html='<div class="grid">';
+  skins.forEach(s=>{
+    const have=owned.includes(s.id);
+    html+='<div class="skin-card '+(s.id===selectedSkin?'selected':'')+'" data-skin="'+s.id+'">'+
+      '<div class="skin-preview">'+s.emoji+'</div><h3>'+s.name+'</h3><span class="price">'+(have?'Adquirido':'🪙 '+s.price)+'</span></div>';
+  });
+  skinsSection.innerHTML=html+'</div>';
+  skinsSection.querySelectorAll('.skin-card').forEach(el=>el.onclick=()=>{
+    const s=skins.find(x=>x.id===el.dataset.skin);
+    if(owned.includes(s.id)){selectedSkin=s.id;}
+    else if(coins>=s.price){coins-=s.price;owned.push(s.id);selectedSkin=s.id;}
+    else { el.animate([{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],{duration:220}); }
+    save();renderSkins();
+  });
+}
+document.getElementById('tabMaps').onclick=()=>{mapsSection.classList.remove('hidden');skinsSection.classList.add('hidden');};
+document.getElementById('tabSkins').onclick=()=>{mapsSection.classList.add('hidden');skinsSection.classList.remove('hidden');};
+
+let gameRunning=false, won=false, score=0, player,npcs=[],fruits=[],obstacles=[];
+const keys={};
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+
+function rand(a,b){return a+Math.random()*(b-a);}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function startGame(){
+  menu.classList.add('hidden'); document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('message').style.display='none';
+  const map=maps.find(m=>m.id===selectedMap)||maps[0];
+  document.getElementById('mapName').textContent=map.name;
+  score=0; document.getElementById('score').textContent=score;
+  player={x:W/2,y:H/2,r:22,speed:4.2};
+  npcs=[]; fruits=[]; obstacles=[];
+  for(let i=0;i<3;i++){
+    let x,y;
+    do{x=rand(80,W-80);y=rand(80,H-80);}while(Math.hypot(x-player.x,y-player.y)<280);
+    npcs.push({x,y,r:21,speed:rand(1.15,1.55),dir:rand(0,Math.PI*2)});
+  }
+  for(let i=0;i<8;i++){
+    let x,y;
+    do{x=rand(50,W-50);y=rand(70,H-50);}while(Math.hypot(x-player.x,y-player.y)<80);
+    fruits.push({x,y,r:14,got:false});
+  }
+  for(let i=0;i<12;i++) obstacles.push({x:rand(30,W-30),y:rand(60,H-30),r:rand(18,34)});
+  gameRunning=true; won=false;
+}
+
+function skinEmoji(){return skins.find(s=>s.id===selectedSkin)?.emoji||'🐻';}
+function drawBear(x,y,r,emoji){
+  ctx.font=`${r*2.2}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowColor='rgba(0,0,0,.25)'; ctx.shadowBlur=5; ctx.fillText(emoji,x,y); ctx.shadowBlur=0;
+}
+function drawWorld(){
+  const map=maps.find(m=>m.id===selectedMap)||maps[0];
+  ctx.fillStyle=map.ground;ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=.14; ctx.fillStyle=map.detail;
+  for(let y=20;y<H;y+=90) for(let x=(y%180)/2;x<W;x+=90){
+    ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  obstacles.forEach(o=>{
+    ctx.fillStyle=map.id==='snow'?'#a8d3df':map.id==='desert'?'#916b42':'#3e6b38';
+    ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,Math.PI*2);ctx.fill();
+  });
+}
+function update(){
+  if(!gameRunning)return;
+  let dx=0,dy=0;
+  if(keys.w||keys.arrowup)dy-=1;if(keys.s||keys.arrowdown)dy+=1;
+  if(keys.a||keys.arrowleft)dx-=1;if(keys.d||keys.arrowright)dx+=1;
+  if(dx||dy){let l=Math.hypot(dx,dy);dx=dx/l;dy=dy/l;player.x+=dx*player.speed;player.y+=dy*player.speed;}
+  player.x=Math.max(player.r,Math.min(W-player.r,player.x)); player.y=Math.max(70,Math.min(H-player.r,player.y));
+
+  npcs.forEach(n=>{
+    let near=dist(n,player)<260?{x:player.x-n.x,y:player.y-n.y}:null;
+    if(near){let l=Math.hypot(near.x,near.y)||1;n.dir=Math.atan2(near.y,near.x);}
+    n.x+=Math.cos(n.dir)*n.speed;n.y+=Math.sin(n.dir)*n.speed;
+    if(n.x<n.r||n.x>W-n.r)n.dir=Math.PI-n.dir;
+    if(n.y<70+n.r||n.y>H-n.r)n.dir=-n.dir;
+  });
+  fruits.forEach(f=>{
+    if(!f.got&&dist(player,f)<player.r+f.r){
+      f.got=true;score++;document.getElementById('score').textContent=score;
+      if(score>=8) finish(true);
+    }
+  });
+  for(const n of npcs){
+    if(dist(player,n)<player.r+n.r){finish(false);break;}
+  }
+}
+function finish(win){
+  if(!gameRunning)return;
+  gameRunning=false;won=win;
+  const msg=document.getElementById('message');
+  msg.style.display='block';
+  if(win){coins+=150;save();msg.innerHTML='¡VICTORIA!<br><span style="font-size:.45em">+150 monedas 🪙</span>'; }
+  else {msg.innerHTML='¡TE ATRAPARON!<br><span style="font-size:.45em">Inténtalo de nuevo</span>'; }
+  setTimeout(()=>{
+    msg.style.display='none';document.getElementById('hud').classList.add('hidden');menu.classList.remove('hidden');
+  },2200);
+}
+function loop(){
+  update();drawWorld();
+  obstacles.forEach(o=>{ctx.fillStyle='rgba(0,0,0,.12)';ctx.beginPath();ctx.ellipse(o.x+8,o.y+o.r*.7,o.r*.8,o.r*.25,0,0,Math.PI*2);ctx.fill();});
+  fruits.forEach(f=>{if(!f.got){ctx.font='27px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(['🍓','🍎','🍊'][score%3],f.x,f.y);}});
+  npcs.forEach(n=>drawBear(n.x,n.y,n.r,'🐻'));
+  if(player)drawBear(player.x,player.y,player.r,skinEmoji());
+  requestAnimationFrame(loop);
+}
+
+document.getElementById('play').onclick=startGame;
+renderMaps();renderSkins();save();loop();
+</script>
+</body>
+</html>
