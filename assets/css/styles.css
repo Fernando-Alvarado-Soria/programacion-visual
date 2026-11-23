@@ -1,11 +1,11 @@
 :root {
-  color-scheme: dark;
-  --paper: #5b21b6;
-  --ink: #ffffff;
-  --muted: #e6dcff;
-  --line: #8b5cf6;
-  --orange: #fbe1ea;
-  --green: #f9c9da;
+  color-scheme: light;
+  --paper: #f2e8ff;
+  --ink: #51259b;
+  --muted: #51259b;
+  --line: #c5a7f5;
+  --orange: #8750e8;
+  --green: #c5a7f5;
   --mono: "DM Mono", monospace;
   --sans: "Nunito", sans-serif;
   --display: "Lilita One", "Trebuchet MS", sans-serif;
