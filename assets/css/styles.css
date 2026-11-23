@@ -1,14 +1,14 @@
 :root {
-  color-scheme: light;
-  --paper: #f6f5f0;
-  --ink: #22231f;
-  --muted: #77776f;
-  --line: #deded5;
-  --orange: #ef653e;
-  --green: #b9d754;
+  color-scheme: dark;
+  --paper: #5b21b6;
+  --ink: #ffffff;
+  --muted: #e6dcff;
+  --line: #8b5cf6;
+  --orange: #fbe1ea;
+  --green: #f9c9da;
   --mono: "DM Mono", monospace;
-  --sans: "DM Sans", sans-serif;
-  --display: "Manrope", sans-serif;
+  --sans: "Nunito", sans-serif;
+  --display: "Lilita One", "Trebuchet MS", sans-serif;
 }
 
 * { box-sizing: border-box; }

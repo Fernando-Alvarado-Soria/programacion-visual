@@ -1,0 +1,70 @@
+/* Identidad cromática inspirada en la marca de la escuela. */
+body { background: var(--paper); color: var(--ink); }
+.site-header { position: sticky; top: 0; z-index: 10; border-color: #8b5cf6; background: rgb(76 29 149 / 88%); backdrop-filter: blur(14px); }
+.brand { color: #fff; }
+.brand-mark { background: #fbe1ea; color: #3b0f80; }
+.brand-year, .nav-link { color: #e6dcff; }
+.nav-link.active { color: #fff; box-shadow: inset 0 -3px #fbe1ea; }
+.nav-link span, .header-cta span { color: #fbe1ea; }
+.header-cta { border: 2px solid #8b5cf6; border-radius: 999px; color: #fff; }
+.header-cta:hover { border-color: #fbe1ea; background: #fbe1ea; color: #3b0f80; }
+.hero { position: relative; background: radial-gradient(ellipse at 78% 48%, rgb(139 92 246 / 35%), transparent 34%), linear-gradient(135deg, #5b21b6, #5720ad); }
+.hero-copy { z-index: 2; }
+.eyebrow { color: #e6dcff; }
+.live-dot { background: #f9c9da; box-shadow: 0 0 0 3px rgb(251 225 234 / 20%); }
+.hero h1 { color: #fff; }
+.hero h1 span { color: #fbe1ea; }
+.hero-bottom { border-color: #8b5cf6; }
+.hero-bottom p { color: #e6dcff; }
+.round-link { border-color: #b99bf9; color: #fff; }
+.round-link:hover { border-color: #fbe1ea; color: #fbe1ea; }
+.art-orbit { border-color: rgb(230 220 255 / 35%); }
+.orbit-two { border-color: rgb(230 220 255 / 22%); }
+.art-sun { background: #fbe1ea; box-shadow: 16px 17px 0 rgb(59 15 128 / 45%); }
+.art-sun::before { border-color: #c98aa3; }
+.art-spark, .art-caption span { color: #fbe1ea; }
+.art-stamp { border-color: #8b5cf6; background: #6d28d9; color: #fff; }
+.art-number { color: #e6dcff; }
+.intro-strip { border-color: #8b5cf6; background: #4c1d95; }
+.intro-strip p, .summary { color: #e6dcff; }
+.summary span { color: #fff; }
+.summary i { background: #8b5cf6; }
+.work-section { background: #5b21b6; }
+.section-heading h2, .students-heading h2 { color: #fff; }
+.section-aside { color: #e6dcff; }
+.toolbar { border-color: #8b5cf6; }
+.filter-button { color: #e6dcff; }
+.filter-button:hover { border-color: #b99bf9; color: #fff; }
+.filter-button.is-active { background: #fbe1ea; color: #3b0f80; }
+.filter-button span { color: #8b5cf6; }
+.search-box { border: 2px solid #8b5cf6; border-radius: 999px; background: #6d28d9; color: #fbe1ea; }
+.search-box input { color: #fff; }
+.search-box input::placeholder { color: #e6dcff; }
+.search-box kbd { border-color: #a77cef; color: #e6dcff; }
+.project-card { overflow: hidden; border: 2px solid #8b5cf6; border-radius: 18px; background: #6d28d9; box-shadow: 0 5px 0 #3b0f80; transition: transform .2s, box-shadow .2s; }
+.project-card:hover { transform: translateY(-4px); box-shadow: 0 9px 0 #3b0f80; }
+.card-link { padding: 10px 10px 15px; }
+.card-art { border-radius: 11px; }
+.card-student { color: #e6dcff; }
+.card-student span { color: #c4b5fd; }
+.card-info h3 { color: #fff; font-family: var(--display); font-weight: 400; letter-spacing: .01em; }
+.card-arrow { border-color: #a77cef; color: #fff; }
+.project-card:hover .card-arrow { border-color: #fbe1ea; background: #fbe1ea; color: #3b0f80; }
+.card-description { color: #e6dcff; }
+.card-tags span { border-color: #8b5cf6; background: #3b0f80; color: #f3eaff; }
+.empty-state { border-color: #a77cef; color: #e6dcff; }
+.students-section { background: #4c1d95; }
+.student-count, .student-index, .student-focus, .student-project-count { color: #d5c5fa; }
+.student-list, .student-row { border-color: #7544cb; }
+.student-row:hover { background: #5b21b6; }
+.student-name { color: #fff; }
+.student-arrow { color: #e6dcff; }
+.student-row:hover .student-arrow { color: #fbe1ea; }
+.site-footer { border-color: #8b5cf6; background: #3b0f80; }
+.site-footer p, .back-top { color: #e6dcff; }
+.back-top:hover { color: #fbe1ea; }
+
+@media (max-width: 620px) {
+  .site-header { background: rgb(76 29 149 / 94%); }
+  .project-card:hover { transform: none; }
+}

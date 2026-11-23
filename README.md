@@ -8,7 +8,8 @@ Portal para presentar los proyectos web de Adrian, Ian, Max y Oleg. Es una pági
 .
 ├── index.html                 # Catálogo y página de inicio
 ├── assets/
-│   ├── css/styles.css          # Estilos del portal
+│   ├── css/styles.css          # Estilos y diseño adaptable
+│   ├── css/brand.css           # Paleta violeta y acabados de marca
 │   └── js/main.js              # Búsqueda y filtros
 ├── Pagina Adrian/              # Proyecto Bear Dash
 ├── Pagina Ian/                 # Proyecto Minecraft 3D
