@@ -2,6 +2,8 @@
 
 Portal para presentar los proyectos web de Adrian, Ian, Max y Oleg. Es una página estática: no requiere instalar dependencias ni compilar.
 
+Para retomar el trabajo desde otra computadora, consulta [`ESTADO_PROYECTO.md`](ESTADO_PROYECTO.md). **Actualiza ese documento en cada commit y push** y súbelo junto con los cambios correspondientes.
+
 ## Estructura
 
 ```text
