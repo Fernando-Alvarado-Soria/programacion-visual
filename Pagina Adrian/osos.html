@@ -29,11 +29,11 @@
     .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
     .money { background:#fff1bb; border:3px solid #dfad48; border-radius:999px; padding:8px 15px; font-size:20px; font-weight:bold; }
     .tabs { display:flex; gap:8px; margin-bottom:18px; }
-    button {
-      border:0; border-radius:12px; padding:11px 16px; cursor:pointer;
-      background:#8fae54; color:white; font-weight:bold; font-size:16px;
-      box-shadow:0 5px 0 #587737; transition:.12s;
-    }
+     button {
+       border:0; border-radius:12px; padding:11px 16px; cursor:pointer;
+       background:#8fae54; color:white; font-weight:bold; font-size:16px;
+       box-shadow:0 5px 0 #587737; transition:.12s;
+     }
     button:hover { transform:translateY(-2px); filter:brightness(1.07); }
     button:active { transform:translateY(3px); box-shadow:0 2px 0 #587737; }
     button.secondary { background:#c78955; box-shadow:0 5px 0 #895936; }
@@ -62,8 +62,24 @@
       font-size:clamp(38px,8vw,82px); font-weight:bold;
       text-shadow:0 5px 0 #50301c,0 8px 20px #000;
     }
-    .controls { text-align:center; color:#7a6249; margin-top:14px; }
-    @media(max-width:700px) { .grid { grid-template-columns:1fr; } .card { padding:16px; } }
+     .controls { text-align:center; color:#7a6249; margin-top:14px; }
+     #touch-controls {
+       position:fixed; left:18px; bottom:18px; z-index:11; display:none;
+       grid-template-columns:repeat(3,54px); grid-template-rows:repeat(2,54px); gap:8px;
+       touch-action:none; user-select:none;
+     }
+     #touch-controls.active { display:grid; }
+     .touch-button {
+       display:grid; place-items:center; padding:0; border:2px solid rgba(255,255,255,.65);
+       border-radius:14px; background:rgba(35,28,20,.78); color:white; font-size:25px;
+       box-shadow:0 4px 0 rgba(0,0,0,.25); touch-action:none;
+     }
+     .touch-button[data-key="w"] { grid-column:2; }
+     .touch-button[data-key="a"] { grid-column:1; grid-row:2; }
+     .touch-button[data-key="s"] { grid-column:2; grid-row:2; }
+     .touch-button[data-key="d"] { grid-column:3; grid-row:2; }
+     .touch-button:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.25); }
+     @media(max-width:700px) { .grid { grid-template-columns:1fr; } .card { padding:16px; } }
   </style>
 </head>
 <body>
@@ -89,10 +105,16 @@
       <section id="mapsSection"></section>
       <section id="skinsSection" class="hidden"></section>
       <button id="play" class="gold" style="width:100%;margin-top:18px;font-size:22px">JUGAR PARTIDA</button>
-      <div class="controls">WASD o flechas para mover · Agarra las 8 frutas · Esquiva a los NPC</div>
-    </div>
-  </div>
-</div>
+       <div class="controls">WASD o flechas para mover · En celular usa los controles táctiles · Agarra las 8 frutas</div>
+     </div>
+   </div>
+   <div id="touch-controls" aria-label="Controles táctiles">
+     <button class="touch-button" type="button" data-key="w" aria-label="Mover arriba">▲</button>
+     <button class="touch-button" type="button" data-key="a" aria-label="Mover a la izquierda">◀</button>
+     <button class="touch-button" type="button" data-key="s" aria-label="Mover abajo">▼</button>
+     <button class="touch-button" type="button" data-key="d" aria-label="Mover a la derecha">▶</button>
+   </div>
+ </div>
 
 <script>
 const canvas = document.getElementById('game');
@@ -229,9 +251,10 @@ function finish(win){
   msg.style.display='block';
   if(win){coins+=150;save();msg.innerHTML='¡VICTORIA!<br><span style="font-size:.45em">+150 monedas 🪙</span>'; }
   else {msg.innerHTML='¡TE ATRAPARON!<br><span style="font-size:.45em">Inténtalo de nuevo</span>'; }
-  setTimeout(()=>{
-    msg.style.display='none';document.getElementById('hud').classList.add('hidden');menu.classList.remove('hidden');
-  },2200);
+   setTimeout(()=>{
+     msg.style.display='none';document.getElementById('hud').classList.add('hidden');menu.classList.remove('hidden');
+     document.getElementById('touch-controls').classList.remove('active');
+   },2200);
 }
 function loop(){
   update();drawWorld();
@@ -242,7 +265,21 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-document.getElementById('play').onclick=startGame;
+const touchControls=document.getElementById('touch-controls');
+const hasTouch=window.matchMedia?.('(pointer: coarse)').matches||navigator.maxTouchPoints>0;
+document.getElementById('play').onclick=()=>{
+  startGame();
+  if(hasTouch)touchControls.classList.add('active');
+};
+document.querySelectorAll('#touch-controls .touch-button').forEach(button=>{
+  const key=button.dataset.key;
+  const press=event=>{event.preventDefault();keys[key]=true;};
+  const release=event=>{event.preventDefault();keys[key]=false;};
+  button.addEventListener('pointerdown',press);
+  button.addEventListener('pointerup',release);
+  button.addEventListener('pointercancel',release);
+  button.addEventListener('pointerleave',release);
+});
 renderMaps();renderSkins();save();loop();
 </script>
 </body>

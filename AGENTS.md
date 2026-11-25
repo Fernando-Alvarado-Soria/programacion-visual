@@ -12,6 +12,7 @@
 - Open the repository root with VS Code and use Live Server on `index.html`, or serve the root with another static HTTP server; opening files directly can hide path/resource issues.
 - Focused checks are `node --check assets/js/main.js` and `git diff --check`. No automated browser, lint, typecheck, or build command is configured.
 - Browser-smoke-test the root links, student filter buttons, search field and `/` shortcut, mobile layout, and all five project pages. Ian and Max Football load Three.js from CDN; Football also loads Tailwind and Font Awesome, so those features need internet access.
+- On mobile, exercise Bear Dash's touch D-pad and Minecraft 3D's joystick, look area, action buttons, and inventory; Football League already provides a virtual joystick and action buttons.
 - Bear Dash stores coins, skins, and map selection in browser `localStorage`; clear site storage when testing a fresh first-run state. Ian's game uses pointer lock, so test it from the served page.
 
 ## Editing Conventions

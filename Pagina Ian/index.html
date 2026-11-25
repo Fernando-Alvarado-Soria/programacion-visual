@@ -88,6 +88,45 @@
         .mini-craft-btns { display: flex; gap: 4px; margin-top: 15px; }
         .mini-btn { padding: 4px 6px; background: #c6c6c6; border: 2px solid; border-top-color: #fff; border-left-color: #fff; border-bottom-color: #555; border-right-color: #555; cursor: pointer; font-family: 'VT323', monospace; font-size: 16px; color: #333; }
         .mini-btn:active { border-top-color: #555; border-left-color: #555; border-bottom-color: #fff; border-right-color: #fff; background: #b0b0b0; }
+
+        #mobile-controls { display: none; position: fixed; inset: 0; z-index: 12; pointer-events: none; }
+        #mobile-controls.active { display: block; }
+        #mobile-move-zone, #mobile-look-zone, .mobile-action, #mobile-inventory-close { touch-action: none; }
+        #mobile-move-zone {
+            position: absolute; left: 18px; bottom: 72px; width: 128px; height: 128px;
+            border: 2px solid rgba(255,255,255,.45); border-radius: 50%;
+            background: rgba(0,0,0,.28); pointer-events: auto;
+        }
+        #mobile-move-handle {
+            position: absolute; top: 50%; left: 50%; width: 52px; height: 52px;
+            margin: -26px; border: 2px solid #fff; border-radius: 50%;
+            background: rgba(120,190,255,.72); box-shadow: 0 2px 8px #0008;
+        }
+        #mobile-look-zone {
+            position: absolute; top: 12%; right: 0; width: 48%; height: 58%;
+            color: rgba(255,255,255,.58); font-size: 16px; text-align: center;
+            pointer-events: auto; user-select: none;
+        }
+        #mobile-look-zone span { display: inline-block; margin-top: 12px; text-shadow: 2px 2px #000; }
+        #mobile-actions {
+            position: absolute; right: 18px; bottom: 70px; display: grid;
+            grid-template-columns: repeat(2, minmax(74px, 92px)); gap: 8px; pointer-events: auto;
+        }
+        .mobile-action {
+            min-height: 46px; padding: 5px 8px; border: 2px solid #fff8; border-radius: 10px;
+            background: rgba(0,0,0,.65); color: #fff; font-family: 'VT323', monospace;
+            font-size: 20px; text-shadow: 1px 1px #000; box-shadow: 0 3px 8px #0008;
+        }
+        .mobile-action:active { background: rgba(80,150,220,.85); }
+        .mobile-inventory-close { display: none; }
+        @media (max-width: 600px) {
+            .start-container { width: calc(100% - 28px); padding: 18px; }
+            .start-title { font-size: 48px; }
+            .controls-info { font-size: 18px; }
+            .mc-gui { max-width: calc(100vw - 12px); max-height: calc(100vh - 12px); overflow: auto; }
+            .mc-top-section { gap: 10px; }
+            .mobile-inventory-close { display: block; align-self: flex-end; margin-bottom: 8px; }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -109,7 +148,7 @@
     <div id="start-screen" class="screen">
         <div class="start-container">
             <h1 class="start-title">MI JUEGO WEB</h1>
-            <p class="controls-info"><b>[1-9]</b> Bloques | <b>[E]</b> Inventario<br><b>[Clic Izq]</b> Picar | <b>[Clic Der]</b> Poner</p>
+            <p class="controls-info"><b>PC:</b> WASD | Clic Izq: picar | Clic Der: poner<br><b>Móvil:</b> joystick, deslizar y botones táctiles</p>
             
             <button id="start-btn" class="mc-button">Un Jugador (Jugar)</button>
             <button class="mc-button" onclick="alert('Multijugador en desarrollo...')">Multijugador</button>
@@ -125,6 +164,7 @@
     <!-- INVENTARIO CLÁSICO[cite: 3] -->
     <div id="inventory-screen" class="screen">
         <div class="mc-gui">
+            <button id="mobile-inventory-close" class="mobile-inventory-close mini-btn" type="button">CERRAR</button>
             <div class="mc-top-section">
                 <div class="mc-player-area">
                     <div class="mc-armor-slots">
@@ -167,9 +207,25 @@
         <button class="mc-button" style="max-width: 300px;" onclick="location.reload()">RESPAWN</button>
     </div>
 
+    <div id="mobile-controls" aria-label="Controles táctiles de Minecraft 3D">
+        <div id="mobile-look-zone"><span>DESLIZA PARA MIRAR</span></div>
+        <div id="mobile-move-zone" aria-label="Joystick de movimiento">
+            <div id="mobile-move-handle"></div>
+        </div>
+        <div id="mobile-actions">
+            <button class="mobile-action" type="button" data-mobile-action="mine">⛏ PICAR</button>
+            <button class="mobile-action" type="button" data-mobile-action="place">▣ PONER</button>
+            <button class="mobile-action" type="button" data-mobile-action="jump">↑ SALTAR</button>
+            <button class="mobile-action" type="button" data-mobile-action="inventory">☷ MOCHILA</button>
+        </div>
+    </div>
+
     <script>
         const BS = 3.0; // Bloques gigantes
+        const isTouchMode = window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
         let health = 10, hunger = 10, activeSlot = 1, inInventoryMode = false;
+        const mobileInput = { x: 0, y: 0, active: false };
+        let mobileJumpPressed = false;
         let inventory = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0 };
         const blockNames = {1:'Pasto', 2:'Tierra', 3:'Madera', 4:'Hojas', 5:'Piedra', 6:'Carbón', 7:'Hierro', 8:'Oro', 9:'Diamante'};
         
@@ -179,7 +235,12 @@
             for(let i=0; i<10; i++) hgStr += (i < hunger) ? "🍗" : "🦴";
             document.getElementById('health-bar').innerText = hpStr;
             document.getElementById('hunger-bar').innerText = hgStr;
-            if(health <= 0) { document.exitPointerLock(); document.getElementById('death-screen').style.display = 'flex'; isLocked = false; }
+            if(health <= 0) {
+                if (!isTouchMode) document.exitPointerLock();
+                document.getElementById('death-screen').style.display = 'flex';
+                document.getElementById('mobile-controls').classList.remove('active');
+                isLocked = false;
+            }
         }
         setInterval(() => { if(health > 0 && !inInventoryMode) { if(hunger > 0) hunger--; else health--; updateStatusBars(); } }, 15000); 
 
@@ -243,13 +304,24 @@
             }
         }
 
+        function toggleInventory() {
+            if (health <= 0) return;
+            const invScreen = document.getElementById('inventory-screen');
+            if (inInventoryMode) {
+                inInventoryMode = false;
+                invScreen.style.display = 'none';
+                if (!isTouchMode) document.body.requestPointerLock();
+            } else if (isLocked) {
+                if (!isTouchMode) document.exitPointerLock();
+                inInventoryMode = true;
+                populateVisualInventory();
+                invScreen.style.display = 'flex';
+            }
+        }
+
         document.addEventListener('keydown', (e) => {
             if(e.key >= '1' && e.key <= '9' && !inInventoryMode) { activeSlot = parseInt(e.key); updateHotbar(); }
-            if(e.code === 'KeyE' && health > 0) {
-                const invScreen = document.getElementById('inventory-screen');
-                if (isLocked) { document.exitPointerLock(); inInventoryMode = true; populateVisualInventory(); invScreen.style.display = 'flex'; } 
-                else if (inInventoryMode) { inInventoryMode = false; invScreen.style.display = 'none'; document.body.requestPointerLock(); }
-            }
+            if(e.code === 'KeyE') toggleInventory();
         });
 
         // CONFIGURACIÓN THREE.JS
@@ -437,12 +509,127 @@
         let keys = {}; document.addEventListener('keydown', e => keys[e.code] = true); document.addEventListener('keyup', e => keys[e.code] = false);
         let isLocked = false;
         
+        function updateCameraRotation(deltaX, deltaY) {
+            cameraRotation.yaw -= deltaX * 0.002;
+            cameraRotation.pitch -= deltaY * 0.002;
+            cameraRotation.pitch = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, cameraRotation.pitch));
+            camera.quaternion.setFromEuler(new THREE.Euler(cameraRotation.pitch, cameraRotation.yaw, 0, 'YXZ'));
+        }
+
         // BOTÓN DE PANTALLA DE INICIO CONECTADO AL JUEGO
-        document.getElementById('start-btn').addEventListener('click', () => { if(health > 0) document.body.requestPointerLock(); });
-        document.addEventListener('pointerlockchange', () => { isLocked = document.pointerLockElement === document.body; document.getElementById('start-screen').style.display = (!isLocked && !inInventoryMode && health > 0) ? 'flex' : 'none'; });
-        
-        document.addEventListener('mousemove', (e) => { if (!isLocked) return; cameraRotation.yaw -= e.movementX * 0.002; cameraRotation.pitch -= e.movementY * 0.002; cameraRotation.pitch = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, cameraRotation.pitch)); camera.quaternion.setFromEuler(new THREE.Euler(cameraRotation.pitch, cameraRotation.yaw, 0, 'YXZ')); });
+        document.getElementById('start-btn').addEventListener('click', () => {
+            if (health <= 0) return;
+            if (isTouchMode) {
+                isLocked = true;
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('mobile-controls').classList.add('active');
+            } else {
+                document.body.requestPointerLock();
+            }
+        });
+        document.addEventListener('pointerlockchange', () => {
+            if (isTouchMode) return;
+            isLocked = document.pointerLockElement === document.body;
+            document.getElementById('start-screen').style.display = (!isLocked && !inInventoryMode && health > 0) ? 'flex' : 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => { if (isLocked && !isTouchMode) updateCameraRotation(e.movementX, e.movementY); });
         document.addEventListener('contextmenu', e => e.preventDefault());
+
+        function triggerWorldAction(button) {
+            if (!isTouchMode || !isLocked || inInventoryMode) return;
+            document.dispatchEvent(new MouseEvent('mousedown', { button: button, bubbles: true }));
+        }
+
+        function initMobileControls() {
+            if (!isTouchMode) return;
+
+            const moveZone = document.getElementById('mobile-move-zone');
+            const moveHandle = document.getElementById('mobile-move-handle');
+            const lookZone = document.getElementById('mobile-look-zone');
+            let moveTouchId = null;
+            let lookTouchId = null;
+            let lastLookX = 0;
+            let lastLookY = 0;
+
+            function updateMove(touch) {
+                const rect = moveZone.getBoundingClientRect();
+                const maxRadius = rect.width / 2;
+                const centerX = rect.left + maxRadius;
+                const centerY = rect.top + maxRadius;
+                let dx = touch.clientX - centerX;
+                let dy = touch.clientY - centerY;
+                const distance = Math.hypot(dx, dy);
+                if (distance > maxRadius) {
+                    dx = dx / distance * maxRadius;
+                    dy = dy / distance * maxRadius;
+                }
+                moveHandle.style.transform = `translate(${dx}px, ${dy}px)`;
+                mobileInput.x = dx / maxRadius;
+                mobileInput.y = dy / maxRadius;
+                mobileInput.active = true;
+            }
+
+            function resetMove() {
+                moveTouchId = null;
+                mobileInput.x = 0;
+                mobileInput.y = 0;
+                mobileInput.active = false;
+                moveHandle.style.transform = 'translate(0, 0)';
+            }
+
+            moveZone.addEventListener('touchstart', (event) => {
+                event.preventDefault();
+                const touch = event.changedTouches[0];
+                moveTouchId = touch.identifier;
+                updateMove(touch);
+            }, { passive: false });
+
+            lookZone.addEventListener('touchstart', (event) => {
+                event.preventDefault();
+                const touch = event.changedTouches[0];
+                lookTouchId = touch.identifier;
+                lastLookX = touch.clientX;
+                lastLookY = touch.clientY;
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (event) => {
+                for (const touch of event.changedTouches) {
+                    if (touch.identifier === moveTouchId) {
+                        event.preventDefault();
+                        updateMove(touch);
+                    }
+                    if (touch.identifier === lookTouchId) {
+                        event.preventDefault();
+                        updateCameraRotation(touch.clientX - lastLookX, touch.clientY - lastLookY);
+                        lastLookX = touch.clientX;
+                        lastLookY = touch.clientY;
+                    }
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchend', (event) => {
+                for (const touch of event.changedTouches) {
+                    if (touch.identifier === moveTouchId) resetMove();
+                    if (touch.identifier === lookTouchId) lookTouchId = null;
+                }
+            });
+            window.addEventListener('touchcancel', () => { resetMove(); lookTouchId = null; });
+
+            document.querySelectorAll('[data-mobile-action]').forEach((button) => {
+                button.addEventListener('pointerdown', (event) => {
+                    event.preventDefault();
+                    const action = button.dataset.mobileAction;
+                    if (action === 'mine') triggerWorldAction(0);
+                    if (action === 'place') triggerWorldAction(2);
+                    if (action === 'jump') mobileJumpPressed = true;
+                    if (action === 'inventory') toggleInventory();
+                });
+            });
+            document.getElementById('mobile-inventory-close').addEventListener('click', toggleInventory);
+        }
+
+        initMobileControls();
 
         function checkCollision(px, py, pz) {
             const w = 0.3 * BS; const points = [ {dx: -w, dz: -w}, {dx: w, dz: -w}, {dx: -w, dz: w}, {dx: w, dz: w} ];
@@ -627,14 +814,19 @@
                 let forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion); forward.y = 0; forward.normalize();
                 let side = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion); side.y = 0; side.normalize();
                 let moveDir = new THREE.Vector3();
-                if (keys['KeyW']) moveDir.add(forward); if (keys['KeyS']) moveDir.sub(forward); if (keys['KeyD']) moveDir.add(side); if (keys['KeyA']) moveDir.sub(side);
+                if (mobileInput.active) {
+                    moveDir.addScaledVector(forward, -mobileInput.y);
+                    moveDir.addScaledVector(side, mobileInput.x);
+                } else {
+                    if (keys['KeyW']) moveDir.add(forward); if (keys['KeyS']) moveDir.sub(forward); if (keys['KeyD']) moveDir.add(side); if (keys['KeyA']) moveDir.sub(side);
+                }
                 if (moveDir.lengthSq() > 0) moveDir.normalize();
 
                 let nextX = playerPos.x + moveDir.x * moveSpeed; if (!checkCollision(nextX, playerPos.y, playerPos.z)) playerPos.x = nextX;
                 let nextZ = playerPos.z + moveDir.z * moveSpeed; if (!checkCollision(playerPos.x, playerPos.y, nextZ)) playerPos.z = nextZ;
 
                 prevFallSpeed = playerVelocity.y; playerVelocity.y -= (25.0 * BS) * delta; 
-                if (keys['Space'] && isGrounded) { playerVelocity.y = 8.5 * BS; isGrounded = false; }
+                if ((keys['Space'] || mobileJumpPressed) && isGrounded) { playerVelocity.y = 8.5 * BS; isGrounded = false; mobileJumpPressed = false; }
                 let nextY = playerPos.y + playerVelocity.y * delta;
 
                 if (playerVelocity.y < 0) { 
